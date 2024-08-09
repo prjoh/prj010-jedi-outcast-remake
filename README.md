@@ -21,8 +21,14 @@ npm run dev
 
 ## Production Build
 
-`npm run build`
+To create a production build run:
+
+```
+npm run build
+```
 
 To preview the build locally run:
 
-`npm run preview`
+```
+npm run preview
+```
