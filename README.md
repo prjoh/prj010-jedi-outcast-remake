@@ -1,4 +1,4 @@
-# [PRJ007] The Legend Of Bob
+# [PRJ010] Jedi Outcast Remake
 
 A remake of Raven Software's "Jedi Knight II: Jedi Outcast" written from scratch using [threejs](https://threejs.org/).
 
