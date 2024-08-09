@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@recast-navigation/three": "^0.33.0",
+    "ammo.js": "github:kripken/ammo.js",
+    "recast-navigation": "^0.33.0",
+    "stats.js": "^0.17.0",
+    "three": "^0.164.1",
+    "tweakpane": "^4.0.4"
+  },
+  "devDependencies": {
+    "vite": "^5.2.12"
+  },
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview --open"
+  }
+}
