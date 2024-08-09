@@ -14,8 +14,10 @@ A remake of Raven Software's "Jedi Knight II: Jedi Outcast" written from scratch
 
 After cloning the repository, naviagate to the root and run:
 
-`npm install`
-`npm run dev`
+```
+npm install
+npm run dev
+```
 
 ## Production Build
 
