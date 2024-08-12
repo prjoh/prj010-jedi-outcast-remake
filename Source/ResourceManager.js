@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { log } from './Log';
+import { assert } from './Assert';
 
 
 export const resources = (() => {
@@ -11,7 +12,7 @@ export const resources = (() => {
     constructor(resource_manager)
     {
       this.resource_manager_ = resource_manager;
-      this.mesh_instances_ = {};
+      this.mesh_instances_ = new Map();
     }
 
     async create(mesh_requests)
@@ -29,10 +30,29 @@ export const resources = (() => {
       // Wait for all the promises to resolve
       try
       {
-        const result = await Promise.all(mesh_promises);
+        const keys = mesh_requests;
+        const values = await Promise.all(mesh_promises);
 
-        console.log(result);
-        // this.mesh_instances_ = 
+        for (let i = 0; i < mesh_requests.length; ++i)
+        {
+          const k = keys[i];
+          const v = values[i];
+
+          if (this.mesh_instances_.has(k))
+          {
+            this.mesh_instances_.get(k).instances.push(v);
+          }
+          else
+          {
+            this.mesh_instances_.set(
+              k, 
+              {
+                index: 0,
+                instances: [v],
+              }
+            );
+          }
+        }
       }
       catch (error)
       {
@@ -40,15 +60,23 @@ export const resources = (() => {
       }
     }
 
-    get_instance(model_id, index)
+    get_instance(model_id)
     {
-      // if (this.mesh_instances_ === null || index < 0 || index > this.mesh_instances_.length - 1)
-      // {
-      //   return null;
-      // }
+      const instances_object = this.mesh_instances_.get(model_id);
 
-      // return this.mesh_instances_[index];
-      return null;
+      if (instances_object === undefined)
+      {
+        log.error(`No entry found for '${model_id}'.`);
+        return null;
+      }
+
+      assert(instances_object.index < instances_object.instances.length, `No free instance available for '${model_id}'. Please increase in config!`);
+
+      const instance = instances_object.instances[instances_object.index];
+
+      instances_object.index += 1;
+
+      return instance;
     }
   }
 
@@ -65,6 +93,7 @@ export const resources = (() => {
     static loaded_textures_ = {};
     static loaded_skinned_models_ = {};
     static loaded_static_models_ = {};
+    static loaded_cube_maps_ = {};
     // static loaded_animations_ = {};
 
     static skinned_mesh_cache_ = new SkinnedMeshCache(this);
@@ -119,6 +148,30 @@ export const resources = (() => {
       loader.load(path, (texture) => {
         this.loaded_textures_[resource_key] = texture;
         this.loaded_textures_[resource_key].flipY = flipY;
+      });
+    }
+
+    static load_cube_map(resource_key)
+    {
+      if (resource_key in this.loaded_cube_maps_)
+      {
+        return;
+      }
+
+      const urls = [
+        `/Textures/${resource_key}/px.png`,
+        `/Textures/${resource_key}/nx.png`,
+        `/Textures/${resource_key}/py.png`,
+        `/Textures/${resource_key}/ny.png`,
+        `/Textures/${resource_key}/pz.png`,
+        `/Textures/${resource_key}/nz.png`,
+      ];
+      const cube_texture_loader = new THREE.CubeTextureLoader(this.loading_manager_);
+      cube_texture_loader.load(urls, (texture) => {
+        this.loaded_cube_maps_[resource_key] = texture;
+
+        // this.loaded_cube_maps_.wrapS = THREE.RepeatWrapping;
+        // this.loaded_cube_maps_.repeat.set(-1, 1);
       });
     }
 
@@ -231,6 +284,23 @@ export const resources = (() => {
       }
     }
 
+    static get_cube_map(resource_key, copy_data = true)
+    {
+      if (!(resource_key in this.loaded_cube_maps_))
+      {
+        throw new Error(`Cube map resource not found: ${resource_key}`);
+      }
+
+      if (copy_data)
+      {
+        return this.loaded_cube_maps_[resource_key].clone();
+      }
+      else
+      {
+        return this.loaded_cube_maps_[resource_key];
+      }
+    }
+
     static get_static_model(resource_key, copy_data = true)
     {
       if (!(resource_key in this.loaded_static_models_))
@@ -274,9 +344,9 @@ export const resources = (() => {
       await this.skinned_mesh_cache_.create(mesh_requests);
     }
 
-    static get_cached_skinned_model(model_id, index = 0)
+    static get_cached_skinned_model(model_id)
     {
-      return this.skinned_mesh_cache_.get_instance(model_id, index);
+      return this.skinned_mesh_cache_.get_instance(model_id);
     }
 
     // static get_animations(resource_key, on_loaded)

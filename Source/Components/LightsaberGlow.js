@@ -16,26 +16,34 @@ export const component_lightsaber_glow = (() => {
     {
       super();
 
-      this.point_light_ = new THREE.PointLight(
+      this.scene_ = params.scene;
+
+      const intensity = 1.2;
+      const distance = 0.0;
+      const decay = 1.5;
+
+      const point_light = new THREE.PointLight(
         params.color,
-        params.intensity,
-        params.distance,
-        params.decay,
+        intensity,
+        distance,
+        decay,
       );
-      this.point_light_.position.set(0.0, 1.0, 0.0);
 
-      // params.scene.add(this.point_light_);
+      // point_light.add(new THREE.AxesHelper(10.0));
 
-      params.scene.add(new THREE.PointLightHelper( this.point_light_, 0.25 ));
-      params.scene.add(new THREE.AxesHelper(1.0));
+      this.point_light_ = point_light;
     }
 
     on_initialized()
     {
-      const c_mesh = this.entity.get_component("SkinnedMeshComponent");
-      const lightsaber_mesh = c_mesh.find_child("P1_low_Cylinder.008");
+      let c_mesh = this.entity.get_component("SkinnedMeshComponent");
+      let lightsaber_mesh = c_mesh.find_child("P1_low_Cylinder008");
 
       lightsaber_mesh.add(this.point_light_);
+      this.point_light_.position.set(0.0, 0.0, -12.5);
+
+      // let lightblade_mesh = c_mesh.find_child("lightblade_Cylinder001");
+      // lightblade_mesh.visible = false;
     }
   };
 

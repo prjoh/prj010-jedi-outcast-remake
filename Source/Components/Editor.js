@@ -41,11 +41,11 @@ export const component_editor = (() => {
         debug_draw_navagent: true,
         debug_draw_instanced_bs: false,
         // Lighting
-        lighting_hemi_enable: true,
-        lighting_hemi_pos: { x: 0.0, y: 0.0, z: 0.0 },
-        lighting_hemi_intensity: 0.0,
-        lighting_hemi_color_sky: '#000000',
-        lighting_hemi_color_ground: '#000000',
+        // lighting_hemi_enable: true,
+        // lighting_hemi_pos: { x: 0.0, y: 0.0, z: 0.0 },
+        // lighting_hemi_intensity: 0.0,
+        // lighting_hemi_color_sky: '#000000',
+        // lighting_hemi_color_ground: '#000000',
         lighting_dir_enable: true,
         lighting_dir_pos: { x: 0.0, y: 0.0, z: 0.0 },
         lighting_dir_intensity: 0.0,
@@ -137,16 +137,16 @@ export const component_editor = (() => {
 
       let page_lighting = tab.pages[eEditorPage.EP_Lighting];
 
-      let folder_hemi_light = page_lighting.addFolder({
-        title: "Hemisphere Light",
-        expanded: true,
-      });
+      // let folder_hemi_light = page_lighting.addFolder({
+      //   title: "Hemisphere Light",
+      //   expanded: true,
+      // });
 
-      folder_hemi_light.addBinding(this.params, 'lighting_hemi_enable', { label: 'Enabled' });
-      folder_hemi_light.addBinding(this.params, 'lighting_hemi_pos', { label: 'Position' });
-      folder_hemi_light.addBinding(this.params, 'lighting_hemi_intensity', { label: 'Intensity' });
-      folder_hemi_light.addBinding(this.params, 'lighting_hemi_color_sky', { label: 'Sky Color', view: 'color' });
-      folder_hemi_light.addBinding(this.params, 'lighting_hemi_color_ground', { label: 'Ground Color', view: 'color' });
+      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_enable', { label: 'Enabled' });
+      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_pos', { label: 'Position' });
+      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_intensity', { label: 'Intensity' });
+      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_color_sky', { label: 'Sky Color', view: 'color' });
+      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_color_ground', { label: 'Ground Color', view: 'color' });
 
       let folder_dir_light = page_lighting.addFolder({
         title: "Directional Light",

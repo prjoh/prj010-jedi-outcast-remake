@@ -69,6 +69,8 @@ export const component_animation = (() => {
       this.root_rotation_buffer1 = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
       this.root_rotation_buffer2 = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
       this.root_rotation_offset_buffer = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
+
+      this.add_animations_(params.mesh, params.animations);
     }
 
     get initialized()
@@ -150,7 +152,7 @@ export const component_animation = (() => {
       return animation_config;
     }
 
-    add_animations(animated_mesh, animations)
+    add_animations_(animated_mesh, animations)
     {
       this.mixer_ = new THREE.AnimationMixer(animated_mesh);
       this.mixer_.addEventListener('loop', this.on_loop.bind(this) );

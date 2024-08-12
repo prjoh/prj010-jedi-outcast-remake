@@ -34,8 +34,8 @@ export const component_renderer = (() => {
         outputColorSpace: THREE.SRGBColorSpace,
         shadowMap_enabled: true,
         shadowMap_type: THREE.PCFSoftShadowMap,
-        // toneMapping: THREE.ACESFilmicToneMapping,
-        // toneMappingExposure: 1.0,
+        toneMapping: THREE.ReinhardToneMapping,
+        toneMappingExposure: 1.0,
       };
 
       this.renderer = new THREE.WebGLRenderer(webgl_params);

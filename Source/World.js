@@ -43,6 +43,18 @@ export const world = (() => {
 
       this.scene_ = new THREE.Scene();
       this.scene_.background = new THREE.Color().setHex(0x000000);
+    
+      // const cubeTextureLoader = new THREE.CubeTextureLoader();
+      // const environmentMap = cubeTextureLoader.load([
+      //   '/env/px.png',
+      //   '/env/nx.png',
+      //   '/env/py.png',
+      //   '/env/ny.png',
+      //   '/env/pz.png',
+      //   '/env/nz.png',
+      // ]);
+
+      // this.scene_.background = environmentMap;
     }
 
     // TODO: This is the routine that loads files from the server into local memory
@@ -51,6 +63,8 @@ export const world = (() => {
       /*
        * Load resources
        */
+      resources.ResourceManager.load_cube_map('sky');
+
       resources.ResourceManager.load_static_model_gltf('DamagedHelmet');
 
       resources.ResourceManager.load_static_model_gltf('skybox');
@@ -121,6 +135,12 @@ export const world = (() => {
        * Setup entities
        */
 
+      const directional_light_target = new THREE.Object3D();
+
+      let sky_cube_map = resources.ResourceManager.get_cube_map('sky');
+      this.scene_.environment = sky_cube_map;
+      this.scene_.environmentIntensity = 0.2;
+
       /** Singletons */ 
       let e_singletons = this.entity_manager_.create_entity("Singletons");
       
@@ -133,7 +153,10 @@ export const world = (() => {
       e_singletons.add_component(component_input.InputComponent);
       e_singletons.add_component(component_physics.PhysicsState);
       e_singletons.add_component(component_renderer.RenderState, this.scene_);
-      e_singletons.add_component(component_lights.SceneLights, this.scene_);
+      e_singletons.add_component(component_lights.SceneLights, {
+        scene: this.scene_,
+        player: directional_light_target,
+      });
       e_singletons.add_component(component_camera.PerspectiveCamera, {
         scene: this.scene_,
         fov: 60,
@@ -157,14 +180,18 @@ export const world = (() => {
       let e_sky = this.entity_manager_.create_entity("Sky");
       e_sky.add_component(component_mesh.StaticMeshComponent, {
         scene: this.scene_,
-        model: resources.ResourceManager.get_static_model('skybox')
+        model: resources.ResourceManager.get_static_model('skybox'),
+        cast_shadow: false,
+        receive_shadow: false,
       });
 
       // Level
       let e_level = this.entity_manager_.create_entity("Level");
       const c_level_mesh = e_level.add_component(component_mesh.StaticMeshComponent, {
         scene: this.scene_,
-        model: resources.ResourceManager.get_static_model('level_01')
+        model: resources.ResourceManager.get_static_model('level_01'),
+        cast_shadow: true,
+        receive_shadow: true,
       });
       e_level.add_component(component_navigation.NavMeshComponent, {
         scene: this.scene_,
@@ -199,9 +226,11 @@ export const world = (() => {
       for (const c of level_model_instanced.children[0].children)
       {
         let e_level_instanced = this.entity_manager_.create_entity(`Level_Instanced${i}`, e_level);
-        e_level_instanced.add_component(component_mesh.InstancedMeshComponent, {
+        let c_instanced_mesh = e_level_instanced.add_component(component_mesh.InstancedMeshComponent, {
           scene: this.scene_,
           model: c.clone(),
+          cast_shadow: true,
+          receive_shadow: true,
         });
         i += 1;
       }
@@ -275,6 +304,8 @@ export const world = (() => {
         e_level_object_dynamic_mesh.add_component(component_mesh.StaticMeshComponent, {
           scene: this.scene_,
           model: c.clone(),
+          cast_shadow: true,
+          receive_shadow: true,
         });
 
         // let e_level_instanced = this.entity_manager_.create_entity(`Level_Instanced${i}`, e_level);
@@ -337,7 +368,7 @@ export const world = (() => {
         blaster: stormtrooper_material_blaster,
       };
 
-      for (let i = 0; i < 6; ++i)
+      for (let i = 0; i < 2; ++i)
       {
         let enemy_position = new THREE.Vector3(-7.5 + i * 2.5, 0.0, -5.0);
         let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
@@ -417,7 +448,7 @@ export const world = (() => {
       // Player
       let player_position = new THREE.Vector3(0.0, 0.0, 0.0);
       let player_rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI, 0));
-      spawner.spawn_player(this.entity_manager_, this.scene_, player_position, player_rotation);
+      let e_player = spawner.spawn_player(this.entity_manager_, this.scene_, directional_light_target, player_position, player_rotation);
 
       // SCENE TESTING
 
@@ -491,7 +522,6 @@ export const world = (() => {
       //  } );
       // const ground = new THREE.Mesh( groundGeo, groundMat );
       // ground.rotation.x = - Math.PI / 2;
-      // // ground.receiveShadow = true;
       // this.scene_.add( ground );
 
       /*

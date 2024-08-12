@@ -39,7 +39,7 @@ export const component_debug = (() => {
       this.debug_instanced_bounding_spheres = [];
 
       // Lighting
-      this.hemisphere_light = null;
+      // this.hemisphere_light = null;
       this.directional_light = null;
       this.dynamic_lights = [];
     }

@@ -27,10 +27,10 @@ export const system_editor = (() => {
         to_obj_v3.z = from_three_v3.z;
       };
 
-      c_editor.params.lighting_hemi_intensity = c_debug.hemisphere_light.intensity;
-      copy_vec3(c_debug.hemisphere_light.position, c_editor.params.lighting_hemi_pos);
-      c_editor.params.lighting_hemi_color_sky = `#${c_debug.hemisphere_light.color.getHexString()}`;
-      c_editor.params.lighting_hemi_color_ground = `#${c_debug.hemisphere_light.groundColor.getHexString()}`;
+      // c_editor.params.lighting_hemi_intensity = c_debug.hemisphere_light.intensity;
+      // copy_vec3(c_debug.hemisphere_light.position, c_editor.params.lighting_hemi_pos);
+      // c_editor.params.lighting_hemi_color_sky = `#${c_debug.hemisphere_light.color.getHexString()}`;
+      // c_editor.params.lighting_hemi_color_ground = `#${c_debug.hemisphere_light.groundColor.getHexString()}`;
 
       c_editor.params.lighting_dir_intensity = c_debug.directional_light.intensity;
       copy_vec3(c_debug.directional_light.position, c_editor.params.lighting_dir_pos);
@@ -129,11 +129,11 @@ export const system_editor = (() => {
         three_pos.set(editor_pos.x, editor_pos.y, editor_pos.y);
       };
 
-      c_debug.hemisphere_light.visible = c_editor.params.lighting_hemi_enable;
-      copy_pos(c_editor.params.lighting_hemi_pos, c_debug.hemisphere_light.position);
-      c_debug.hemisphere_light.intensity = c_editor.params.lighting_hemi_intensity;
-      copy_color(c_editor.params.lighting_hemi_color_sky, c_debug.hemisphere_light.color);
-      copy_color(c_editor.params.lighting_hemi_color_ground, c_debug.hemisphere_light.groundColor);
+      // c_debug.hemisphere_light.visible = c_editor.params.lighting_hemi_enable;
+      // copy_pos(c_editor.params.lighting_hemi_pos, c_debug.hemisphere_light.position);
+      // c_debug.hemisphere_light.intensity = c_editor.params.lighting_hemi_intensity;
+      // copy_color(c_editor.params.lighting_hemi_color_sky, c_debug.hemisphere_light.color);
+      // copy_color(c_editor.params.lighting_hemi_color_ground, c_debug.hemisphere_light.groundColor);
 
       c_debug.directional_light.visible = c_editor.params.lighting_dir_enable;
       copy_pos(c_editor.params.lighting_dir_pos, c_debug.directional_light.position);

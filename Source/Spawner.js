@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 
-import { BT_GRAVITY, eCollisionGroup } from './Config';
+import { ASSET_ID_ENEMY, ASSET_ID_KYLE, BT_GRAVITY, eCollisionGroup } from './Config';
 import { fsm } from './FSM';
+import { resources } from './ResourceManager';
 
 import { component_camera } from './Components/Camera';
 import { component_mesh } from './Components/Mesh';
@@ -18,14 +19,14 @@ import { component_lightsaber_glow } from './Components/LightsaberGlow';
 
 export const spawner = (() => {
 
-  let enemy_counter = 0;
-
-  function spawn_player(entity_manager, scene, position, rotation)
+  function spawn_player(entity_manager, scene, directional_light_target, position, rotation)
   {
     const e_singletons = entity_manager.get_entity("Singletons");
 
     const c_physics_state = e_singletons.get_component("PhysicsState");
     const c_camera = e_singletons.get_component("PerspectiveCamera");
+
+    const model_data = resources.ResourceManager.get_cached_skinned_model(ASSET_ID_KYLE);
 
     let e_player = entity_manager.create_entity("Player");
     let c_player_transform = e_player.get_component("Transform");
@@ -52,7 +53,9 @@ export const spawner = (() => {
     c_player_mesh_transform.position = new THREE.Vector3(0.0, 0.0, 0.0);
     e_player_mesh.add_component(component_command.PlayerCommander);
     e_player_mesh.add_component(component_fighting.FightingState);
-    let c_player_animation_controller = e_player_mesh.add_component(component_animation.AnimationController, {
+    e_player_mesh.add_component(component_animation.AnimationController, {
+      mesh: model_data.scene,
+      animations: model_data.animations,
       initial_state: '01_IdleArmed',
       parameters: [
         ["is_moving", false],
@@ -255,18 +258,18 @@ export const spawner = (() => {
           conditions: []
         },
       ]
-    });
-    e_player_mesh.add_component(component_mesh.SkinnedMeshComponent, {
+    })
+    let c_skinned_mesh = e_player_mesh.add_component(component_mesh.SkinnedMeshComponent, {
       scene: scene,
-      model_id: 'kyle2_anim_comp2',
-      animation_controller: c_player_animation_controller,
+      model: model_data.scene,
+      cast_shadow: true,
+      receive_shadow: true,
     });
+    c_skinned_mesh.setup_kyle();
+    c_skinned_mesh.mesh_.add(directional_light_target);
     e_player_mesh.add_component(component_lightsaber_glow.LightsaberGlow, {
       scene: scene,
       color: 0x2E67F8,
-      intensity: 1.0,
-      distance: 0.0,
-      decay: 2.0,
     });
 
     let e_player_trigger = entity_manager.create_entity("PlayerSwordTrigger", e_player_mesh);
@@ -287,20 +290,21 @@ export const spawner = (() => {
 
     let e_player_camera = entity_manager.create_entity("Player_Camera", e_player);
     e_player_camera.add_component(component_camera.CameraController, c_camera.camera, c_camera_target_transform);
+
+    return e_player;
   }
 
   function spawn_enemy(entity_manager, scene, materials, position, rotation, name, behavior_id, behavior_params)
   {
-    let enemy_id = enemy_counter;
-    enemy_counter += 1;
-
     const e_singletons = entity_manager.get_entity("Singletons");
 
     const c_physics_state = e_singletons.get_component("PhysicsState");
 
+    const model_data = resources.ResourceManager.get_cached_skinned_model(ASSET_ID_ENEMY);
+
 if (true)
 {
-    let e_trooper = entity_manager.create_entity("Stormtrooper_" + enemy_id);
+    let e_trooper = entity_manager.create_entity("Stormtrooper_" + name);
     let c_trooper_transform = e_trooper.get_component("Transform");
     c_trooper_transform.position = position.add(new THREE.Vector3(0.0, 0.0, 0.0));
     c_trooper_transform.rotation = rotation;
@@ -322,9 +326,9 @@ if (true)
       agent_height: 1.8,
     });
     e_trooper.add_component(component_enemy_movement.EnemyMovementComponent);
-    let c_trooper_animation_controller = e_trooper.add_component(component_animation.AnimationController, {
-      animated_mesh: null,
-      animations: null,
+    e_trooper.add_component(component_animation.AnimationController, {
+      mesh: model_data.scene,
+      animations: model_data.animations,
       initial_state: "01_Idle",
       parameters: [
         ["idle", 0],
@@ -607,16 +611,19 @@ if (true)
         },
       ]
     });
-    e_trooper.add_component(component_mesh.SkinnedMeshComponent, {
+    let c_skinned_mesh = e_trooper.add_component(component_mesh.SkinnedMeshComponent, {
       scene: scene,
-      model_id: 'stormtrooper_anim2',
-      materials: materials,
-      animation_controller: c_trooper_animation_controller, 
+      model: model_data.scene,
+      cast_shadow: true,
+      receive_shadow: true,
     });
+    c_skinned_mesh.setup_stormtrooper(materials);
     e_trooper.add_component(component_enemy_behavior.EnemyBehaviorComponent, {
       behavior_id: behavior_id,
       behavior_params: behavior_params,
     });
+
+    return e_trooper;
 }
 
 if (false)

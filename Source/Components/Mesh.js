@@ -3,11 +3,18 @@ import * as THREE from 'three';
 import { resources } from '../ResourceManager';
 
 import { ecs_component } from '../ECS/Component';
-import { component_animation } from './Animation';
 import { env } from '../Env';
 import { assert } from '../Assert';
 
 export const component_mesh = (() => {
+
+  function setup_shadows(root, cast_shadow, receive_shadow)
+  {
+    root.traverse((c) => {
+      c.receiveShadow = receive_shadow;
+      c.castShadow = cast_shadow;
+    });
+  }
 
   class InstancedMeshComponent extends ecs_component.Component
   {
@@ -55,6 +62,8 @@ export const component_mesh = (() => {
 
       this.instanced_mesh_.computeBoundingSphere();
       this.scene_.add( this.instanced_mesh_ );
+
+      setup_shadows(this.instanced_mesh_, params.cast_shadow, params.receive_shadow);
     }   
 
     get matrix_array()
@@ -109,6 +118,8 @@ export const component_mesh = (() => {
       this.mesh_ = params.model;
 
       this.scene_.add( this.mesh_ );
+
+      setup_shadows(this.mesh_, params.cast_shadow, params.receive_shadow);
     }
 
     set_transform(t)
@@ -134,38 +145,14 @@ export const component_mesh = (() => {
 
       this.scene_ = params.scene;
 
-      this.mesh_ = null;
+      this.mesh_ = params.model;
+
+      this.scene_.add( this.mesh_ );
+
+      setup_shadows(this.mesh_, params.cast_shadow, params.receive_shadow);
 
       // TODO
       this.bone_ = null;
-
-      resources.ResourceManager.get_skinned_model(params.model_id, (gltf) => {
-
-        this.mesh_ = gltf.scene;
-
-        if (params.model_id === 'stormtrooper_anim2')
-        {
-          this.setup_stormtrooper_(params);
-        }
-        else if (params.model_id === 'kyle2_anim_comp2')
-        {
-          this.setup_kyle_(params);
-        }
-
-        // if (env.DEBUG_MODE)
-        // {
-        //   this.mesh_.add(new THREE.AxesHelper(1));
-
-        //   const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 ); 
-        //   const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); 
-        //   const cube = new THREE.Mesh( geometry, material );
-        //   this.mesh_.add( cube );
-        // }
-
-        this.scene_.add( this.mesh_ );
-
-        params.animation_controller.add_animations(this.mesh_, gltf.animations);
-      });
     }
 
     find_child(name)
@@ -189,7 +176,7 @@ export const component_mesh = (() => {
       this.mesh_.scale.copy(t.scale);
     }
 
-    setup_kyle_(params)
+    setup_kyle()
     {
         const kyle_belt_rgb_map = resources.ResourceManager.get_texture('kyle/Kyle_Clothes_Belt_OcclusionRoughnessMetallic', false);
         const kyle_boots_rgb_map = resources.ResourceManager.get_texture('kyle/Kyle_Clothes_Boots_OcclusionRoughnessMetallic', false);
@@ -259,20 +246,20 @@ export const component_mesh = (() => {
         });
     }
 
-    setup_stormtrooper_(params)
+    setup_stormtrooper(materials)
     {
       this.mesh_.traverse((o) => {
         // o.receiveShadow = false;
         switch(o.name)
         {
           case "TrooperHead":
-            o.material = params.materials.head;
+            o.material = materials.head;
             break;
           case "TrooperBody":
-            o.material = params.materials.body;
+            o.material = materials.body;
             break;
           case "BlasterBody":
-            o.material = params.materials.blaster;
+            o.material = materials.blaster;
         }
       });
     }

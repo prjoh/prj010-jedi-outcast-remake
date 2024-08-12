@@ -13,42 +13,71 @@ export const component_lights = (() => {
       return SceneLights.CLASS_NAME;
     }
 
-    constructor(scene)
+    constructor(params)
     {
       super();
 
-      this.scene_ = scene;
+      this.scene_ = params.scene;
 
       // this.scene_.fog = new THREE.Fog( 0xDFE9F3, 0.1, 200 );
       // this.scene_.fog = new THREE.FogExp2(0xDFE9F3, 0.00075);
 
-      this.hemisphere_light = new THREE.HemisphereLight( 0xFFACAC, 0x8890BA, 0.3 );
-      this.scene_.add( this.hemisphere_light );
+      // this.hemisphere_light = new THREE.HemisphereLight( 0xFFACAC, 0x8890BA, 0.3 );
+      // this.hemisphere_light = new THREE.HemisphereLight( 0xd5dcff, 0xc58282, 0.1 );
+      // this.scene_.add( this.hemisphere_light );
 
-      this.directional_light = new THREE.DirectionalLight( 0xBBC8FF, 1.4);
+      // this.directional_light = new THREE.DirectionalLight( 0xBBC8FF, 1.0);
+      this.directional_light = new THREE.DirectionalLight( 0xffdddd, 0.5);
       this.directional_light.position.set(-15, 25, 15);
-      this.directional_light.target.position.set(0, 0, 0);
+      this.directional_light.target = params.player;
       // this.directional_light = new THREE.DirectionalLight( 0xBBC8FF, 10.0 );
       // this.directional_light.position.set(-15, 50, 100);
       // this.directional_light.target.position.set(100, 0, -105);
       this.scene_.add( this.directional_light );
 
+      //Set up shadow properties for the light
+      this.directional_light.castShadow = true;
+      this.directional_light.shadow.bias = -0.0001;
+      this.directional_light.shadow.mapSize.width = 4096; // default
+      this.directional_light.shadow.mapSize.height = 4096; // default
+      this.directional_light.shadow.camera.near = -100.0;
+      this.directional_light.shadow.camera.far = 500.0;
+      this.directional_light.shadow.camera.left = 50;
+      this.directional_light.shadow.camera.right = -50;
+      this.directional_light.shadow.camera.top = 50;
+      this.directional_light.shadow.camera.bottom = -50;
+
+      // this.directional_light.shadow.camera.left = 5;
+      // this.directional_light.shadow.camera.right = -5;
+      // this.directional_light.shadow.camera.top = 5;
+      // this.directional_light.shadow.camera.bottom = -5;
+
+      this.directional_light_helper = new THREE.CameraHelper( this.directional_light.shadow.camera );
+      this.scene_.add( this.directional_light_helper );
+
       const spot_light = new THREE.SpotLight(0xffffff, 100.0, 0, Math.PI/4, 0.2);
       spot_light.position.set(2.85, 0.2, -11.15);
       spot_light.target.position.set(-8, 2.5, -25);
 
-      // spot_light.castShadow = true;
-
-      // spot_light.shadow.mapSize.width = 1024;
-      // spot_light.shadow.mapSize.height = 1024;
-      
-      // spot_light.shadow.camera.near = 500;
-      // spot_light.shadow.camera.far = 4000;
-      // spot_light.shadow.camera.fov = 30;
+      //Set up shadow properties for the light
+      spot_light.castShadow = true;
+      // spot_light.shadow.bias = -0.0001;
+      spot_light.shadow.mapSize.width = 2048; // default
+      spot_light.shadow.mapSize.height = 2048; // default
+      spot_light.shadow.camera.near = 0.2;
+      spot_light.shadow.camera.far = 500.0;
 
       const spot_light2 = new THREE.SpotLight(0xffffff, 100.0, 0, Math.PI/4, 0.2);
       spot_light2.position.set(-18.85, 0.2, -11.15);
       spot_light2.target.position.set(-8, 2.5, -25);
+
+      //Set up shadow properties for the light
+      spot_light2.castShadow = true;
+      // spot_light2.shadow.bias = -0.0001;
+      spot_light2.shadow.mapSize.width = 2048; // default
+      spot_light2.shadow.mapSize.height = 2048; // default
+      spot_light2.shadow.camera.near = 0.2;
+      spot_light2.shadow.camera.far = 500.0;
       
       this.scene_.add( spot_light );
       this.scene_.add( spot_light2 );
@@ -107,7 +136,7 @@ export const component_lights = (() => {
           c_debug.debug_lights.push(helper);
         }
 
-        c_debug.hemisphere_light = this.hemisphere_light;
+        // c_debug.hemisphere_light = this.hemisphere_light;
         c_debug.directional_light = this.directional_light;
 
         for (const light of this.debug_dynamic_lights_)

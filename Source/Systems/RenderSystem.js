@@ -158,6 +158,13 @@ export const system_renderer = (() => {
         c_instanced_mesh.set_draw_count(last_visible_index + 1);
       }
 
+      let c_scene_lights = e_singletons.get_component("SceneLights");
+      const e_player = this.entity_manager_.get_entity("Player");
+      const c_player_transform = e_player.get_component("Transform");
+
+      let directional_light = c_scene_lights.directional_light;
+      directional_light.position.add(c_player_transform.position);
+
       c_render_state.renderer.render(c_render_state.scene, c_camera.camera);
     }
 
