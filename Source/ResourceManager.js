@@ -7,6 +7,9 @@ import { assert } from './Assert';
 
 export const resources = (() => {
 
+  const BASE_PATH = '/';
+  // const BASE_PATH = '/outcast/';
+
   class SkinnedMeshCache
   {
     constructor(resource_manager)
@@ -113,7 +116,7 @@ export const resources = (() => {
         return;
       }
 
-      const path = `${resource_key}.bin`;
+      const path = `${BASE_PATH}${resource_key}.bin`;
 
       this.loading_manager_.itemStart( path );
 
@@ -142,7 +145,7 @@ export const resources = (() => {
         return;
       }
 
-      const path = `Textures/${resource_key}.png`;
+      const path = `${BASE_PATH}Textures/${resource_key}.png`;
       const loader = new THREE.TextureLoader(this.loading_manager_);
       
       loader.load(path, (texture) => {
@@ -159,12 +162,12 @@ export const resources = (() => {
       }
 
       const urls = [
-        `/Textures/${resource_key}/px.png`,
-        `/Textures/${resource_key}/nx.png`,
-        `/Textures/${resource_key}/py.png`,
-        `/Textures/${resource_key}/ny.png`,
-        `/Textures/${resource_key}/pz.png`,
-        `/Textures/${resource_key}/nz.png`,
+        `${BASE_PATH}Textures/${resource_key}/px.png`,
+        `${BASE_PATH}Textures/${resource_key}/nx.png`,
+        `${BASE_PATH}Textures/${resource_key}/py.png`,
+        `${BASE_PATH}Textures/${resource_key}/ny.png`,
+        `${BASE_PATH}Textures/${resource_key}/pz.png`,
+        `${BASE_PATH}Textures/${resource_key}/nz.png`,
       ];
       const cube_texture_loader = new THREE.CubeTextureLoader(this.loading_manager_);
       cube_texture_loader.load(urls, (texture) => {
@@ -182,7 +185,7 @@ export const resources = (() => {
         return;
       }
 
-      const path = `${resource_key}.glb`;
+      const path = `${BASE_PATH}${resource_key}.glb`;
 
       // Instantiate gltf loader
       const loader = new GLTFLoader( this.loading_manager_ );
@@ -212,7 +215,7 @@ export const resources = (() => {
         return;
       }
 
-      const path = `${resource_key}.glb`;
+      const path = `${BASE_PATH}${resource_key}.glb`;
 
       // // Instantiate gltf loader
       // const loader = new GLTFLoader();
