@@ -12,6 +12,8 @@ A remake of Raven Software's "Jedi Knight II: Jedi Outcast" written from scratch
 
 ## How To Run
 
+Running this project requires an installation of [Node.js](https://nodejs.org/en/download/package-manager).
+
 After cloning the repository, naviagate to the root and run:
 
 ```
