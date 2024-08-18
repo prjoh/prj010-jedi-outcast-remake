@@ -33,12 +33,12 @@ export const component_editor = (() => {
         render_info_draw_calls: 0,
         render_info_triangles: 0,
         // Debug Draw
-        debug_draw_all: true,
-        debug_draw_camera: true,
-        debug_draw_lights: true,
-        debug_draw_physics: true,
-        debug_draw_navmesh: true,
-        debug_draw_navagent: true,
+        debug_draw_all: false,
+        debug_draw_camera: false,
+        debug_draw_lights: false,
+        debug_draw_physics: false,
+        debug_draw_navmesh: false,
+        debug_draw_navagent: false,
         debug_draw_instanced_bs: false,
         // Lighting
         // lighting_hemi_enable: true,

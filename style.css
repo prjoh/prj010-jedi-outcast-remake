@@ -1,0 +1,153 @@
+@font-face {
+  font-family: 'SourceCodePro';
+  src: local('SourceCodePro'), url(./fonts/SourceCodePro-ExtraLight.ttf) format('truetype');
+}
+
+:root {
+  --font-size-header-1: max(18px, calc(2vw));
+  --font-size-header-2: max(14px, calc(1.5vw));
+  --font-size-text: max(10px, calc(1.5vw));
+  --font-size-text-small: max(8px, calc(1.15vw));
+  --content-button-size: max(50px, 7.5vh);
+  --content-button-inner: max(40px, 5vh);
+  --color-main: #0A9396;
+  --color-accent: #10D1D5;
+  --color-background: #001219;
+  --loading-bar-container-size: 80vh;
+  --loading-bar-container-glow-offset: 60px;
+  --loading-bar-size: 14px;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  monospace;
+}
+
+.scene {
+  position: relative;
+}
+
+.canvas {
+  position: absolute;
+  z-index: 0;
+}
+
+.canvas-overlay {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  /*background-color: magenta;*/
+  pointer-events: none;
+}
+
+
+.loading-screen {
+  position: absolute;
+  background-color: black;
+  z-index: 4;
+  height: 100%;
+  width: 100%;
+  opacity: 100%;
+  pointer-events: none;
+}
+.loading-screen.hidden {
+  transition: 3s cubic-bezier(0.32, 0, 0.67, 0);
+  opacity: 0%;
+}
+
+.loading-bar-overflow{ /* Wraps the rotating .loading-bar */
+  /* offset for glow effect */
+  padding: var(--loading-bar-container-glow-offset)
+           var(--loading-bar-container-glow-offset)
+           0px
+           var(--loading-bar-container-glow-offset);
+  position: relative;
+  margin: auto;
+  /* account for glow effect offset */
+  margin-top: calc(-0.5 * var(--loading-bar-container-size) - var(--loading-bar-container-glow-offset));
+  top: 100%;
+  overflow: hidden; /* Comment this line to understand the trick */
+  /* Half circle (overflow) */
+  width: var(--loading-bar-container-size);
+  height: calc(0.5 * var(--loading-bar-container-size));
+}
+.loading-bar{
+  --loading-bar-value: 45deg;
+
+  position: absolute;
+  /* full circle! */
+  width: var(--loading-bar-container-size);
+  height: var(--loading-bar-container-size);
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: var(--loading-bar-size) solid #F1F1F1;
+  border-bottom-color: var(--color-accent);
+  border-right-color: var(--color-accent);
+  transform: rotate(var(--loading-bar-value));
+  /* TODO: Set to animation: none; once loading is finished */
+  animation: pulsate 2.5s ease-in-out infinite;
+}
+@-webkit-keyframes pulsate {
+  0% {
+    -webkit-box-shadow: 0px 0px 30px 5px var(--color-accent);
+    -moz-box-shadow: 0px 0px 30px 5px var(--color-accent);
+    box-shadow: 0px 0px 30px 5px var(--color-accent);
+  }
+  50% {
+    -webkit-box-shadow: 0px 0px 50px 5px var(--color-accent);
+    -moz-box-shadow: 0px 0px 50px 5px var(--color-accent);
+    box-shadow: 0px 0px 50px 5px var(--color-accent);
+  }
+  100% {
+    -webkit-box-shadow: 0px 0px 30px 5px var(--color-accent);
+    -moz-box-shadow: 0px 0px 30px 5px var(--color-accent);
+    box-shadow: 0px 0px 30px 5px var(--color-accent);
+  }
+}
+.progress{
+  width: 100%;
+  position: absolute;
+  text-align: center;
+  bottom: 0;
+  color: var(--color-main);
+  font-family: SourceCodePro;
+  margin-bottom: 2vh;
+  display: flex; /* or inline-flex */
+  flex-direction: column;
+}
+.progress-value{
+  font-size: var(--font-size-text);
+  font-weight: bold;
+}
+.progress-message{
+  font-size: var(--font-size-text-small);
+}
+
+.logo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* ensures the image is on top of everything */
+  pointer-events: none; /* prevents the overlay from interfering with clicks */
+}
+
+.centered-image {
+  max-width: 100%; /* Ensures the image scales appropriately */
+  max-height: 100%; /* Ensures the image scales appropriately */
+}

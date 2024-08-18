@@ -158,7 +158,7 @@ export const component_navigation = (() => {
 
       const position = this.path_[this.path_index_];
       this.waypoint.position.x = position.x;
-      this.waypoint.position.y = position.y;
+      this.waypoint.position.y = position.y - 0.1; // TODO: HACK
       this.waypoint.position.z = position.z;
       this.waypoint.is_endpoint = this.path_index_ === (this.path_.length - 1);
 
@@ -198,7 +198,7 @@ export const component_navigation = (() => {
 
       const position = this.path_[this.path_index_];
       this.waypoint.position.x = position.x;
-      this.waypoint.position.y = position.y;
+      this.waypoint.position.y = position.y - 0.1; // TODO: HACK
       this.waypoint.position.z = position.z;
       this.waypoint.is_endpoint = this.path_index_ === (this.path_.length - 1);
     }

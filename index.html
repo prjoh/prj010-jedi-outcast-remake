@@ -3,12 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" type="text/css" href="./Source/style.css">
+  <link rel="stylesheet" type="text/css" href="./style.css">
   <title>My New Project</title>
 </head>
 <body>
   <script src="./Source/ThirdParty/ammo.js"></script>
   <script src="./Source/main.js" type="module"></script>
+  <div class="loading-screen" id="loading-screen">
+    <div class="logo">
+      <img src="./Graphics/logo.png" class="centered-image">
+    </div>
+    <div class="loading-bar-overflow">
+        <div class="loading-bar" id="loading-bar"></div>
+    </div>
+    <div class="progress">
+        <span class="progress-value" id="progress-value">0%</span>
+        <span class="progress-message" id="progress-message">Loading Files ...</span>
+    </div>
+  </div>
   <div class="scene" id="scene">
     <div class="canvas" id="canvas"></div>
     <div class="canvas-overlay">

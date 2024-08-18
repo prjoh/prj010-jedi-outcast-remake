@@ -87,6 +87,7 @@ export const system_enemy_movement = (() => {
                       .sub(current_position)
                       .normalize();
             current_position.addScaledVector(direction, c_movement.current_move_speed * delta_time_s);
+
             c_transform.position = current_position;
             c_transform.look_at(target_position);
 

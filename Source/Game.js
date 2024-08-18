@@ -7,6 +7,11 @@ import { resources } from './ResourceManager';
 
 export const game = (() => {
 
+  const loading_screen = document.getElementById('loading-screen');
+  const loading_bar = document.getElementById('loading-bar');
+  const progress_value = document.getElementById('progress-value');
+  const progress_message = document.getElementById('progress-message');
+
   class Game
   {
     constructor()
@@ -40,17 +45,27 @@ export const game = (() => {
 
     on_load_started_(url, loaded, total)
     {
-
+      progress_message.textContent = "Loading file: " + url;
     }
 
     on_load_progress_(url, loaded, total)
     {
-
+      const progress = (loaded / total * 100).toFixed(0);
+      progress_value.textContent = progress + "%"
+      loading_bar.style.setProperty('--loading-bar-value', 45 + (progress * 1.8) + "deg");
+      if (url.length < 100)
+      {
+        progress_message.textContent = "Loading file: " + url;
+      }
     }
 
     async on_load_completed_()
     {
       await this.current_world_.init_async();
+
+      progress_message.textContent = "Loading complete!";
+      loading_screen.classList.add('hidden');
+
       this.clock_.init();
       this.set_request_update_(true);
     }

@@ -58,7 +58,7 @@ class Goal_TurnTowards extends Goal
         anim_param_id += `right${clamped_angles}`;
       }
 
-      console.log(`TurnTowards: ${anim_param_id} | ${turn_dir * angle_degrees}`);
+      // console.log(`TurnTowards: ${anim_param_id} | ${turn_dir * angle_degrees}`);
       ai.set_animation_param(anim_param_id, true);
 
       this.param_id = anim_param_id;

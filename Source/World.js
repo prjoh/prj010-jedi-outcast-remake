@@ -65,14 +65,14 @@ export const world = (() => {
        */
       resources.ResourceManager.load_cube_map('sky');
 
-      resources.ResourceManager.load_static_model_gltf('DamagedHelmet');
+      // resources.ResourceManager.load_static_model_gltf('DamagedHelmet');
 
       resources.ResourceManager.load_static_model_gltf('skybox');
-      resources.ResourceManager.load_static_model_gltf('test');
+      // resources.ResourceManager.load_static_model_gltf('test');
       resources.ResourceManager.load_static_model_gltf('level_01');
       resources.ResourceManager.load_static_model_gltf('level_01_dc');
       resources.ResourceManager.load_static_model_gltf('level_01_instanced');
-      resources.ResourceManager.load_static_model_gltf('physics_test_box');
+      // resources.ResourceManager.load_static_model_gltf('physics_test_box');
       resources.ResourceManager.load_skinned_model_gltf('kyle2_anim_comp2');
       resources.ResourceManager.load_skinned_model_gltf('stormtrooper_anim2');
       resources.ResourceManager.load_texture('Grid');
@@ -370,8 +370,8 @@ export const world = (() => {
 
       for (let i = 0; i < 2; ++i)
       {
-        let enemy_position = new THREE.Vector3(-7.5 + i * 2.5, 0.0, -5.0);
-        let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
+        let enemy_position = new THREE.Vector3(-15.0 + i * 2.5, 0.0, -3.0);
+        let enemy_rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI, 0));
 
         let behavior_id = (i % 2) === 0 ? eBehaviorID.BID_Stormtrooper01 : eBehaviorID.BID_Stormtrooper02;
         let behavior_params = (i % 2) === 0 ? {
@@ -380,6 +380,8 @@ export const world = (() => {
         : {
           path: [
             new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(0.0, 0.0, -35.0)),
+            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(8.0, 0.0, -35.0)),
+            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(8.0, 0.0, 0.0)),
             new THREE.Vector3().copy(enemy_position),
           ],
         };
