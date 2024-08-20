@@ -126,7 +126,7 @@ export const system_editor = (() => {
       };
 
       const copy_pos = (editor_pos, three_pos) => {
-        three_pos.set(editor_pos.x, editor_pos.y, editor_pos.y);
+        three_pos.set(editor_pos.x, editor_pos.y, editor_pos.z);
       };
 
       // c_debug.hemisphere_light.visible = c_editor.params.lighting_hemi_enable;

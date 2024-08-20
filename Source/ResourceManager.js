@@ -3,12 +3,13 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { log } from './Log';
 import { assert } from './Assert';
+import { env } from './Env';
+
 
 
 export const resources = (() => {
 
-  const BASE_PATH = '/';
-  // const BASE_PATH = '/outcast/';
+  const BASE_PATH = env.BASE_PATH;
 
   class SkinnedMeshCache
   {

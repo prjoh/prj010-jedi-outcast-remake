@@ -27,6 +27,8 @@ export const system_renderer = (() => {
         component_mesh.StaticMeshComponent.CLASS_NAME,
         component_transform.Transform.CLASS_NAME,
       );
+
+      window.onresize = this.on_window_resize_.bind(this);
     }
 
     init() {}
@@ -101,14 +103,14 @@ export const system_renderer = (() => {
       let c_render_state = e_singletons.get_component("RenderState");
       let c_camera = e_singletons.get_component("PerspectiveCamera");
 
-      if (c_render_state.has_resized)
-      {
-        const [canvas_width, canvas_height] = c_render_state.canvas_size;
-        c_camera.camera.aspect = canvas_width / canvas_height;
-        c_camera.camera.updateProjectionMatrix();
-        c_render_state.renderer.setSize(canvas_width, canvas_height);
-        c_render_state.has_resized = false;
-      }
+      // if (c_render_state.has_resized)
+      // {
+      //   const [canvas_width, canvas_height] = c_render_state.canvas_size;
+      //   c_camera.camera.aspect = canvas_width / canvas_height;
+      //   c_camera.camera.updateProjectionMatrix();
+      //   c_render_state.renderer.setSize(canvas_width, canvas_height);
+      //   c_render_state.has_resized = false;
+      // }
 
       // Instanced Mesh Frustum Culling
       const [instanced_meshes] = this.render_system_tuples_2_.component_tuples;
@@ -165,10 +167,83 @@ export const system_renderer = (() => {
       let directional_light = c_scene_lights.directional_light;
       directional_light.position.add(c_player_transform.position);
 
-      c_render_state.renderer.render(c_render_state.scene, c_camera.camera);
+      const e_player_mesh = this.entity_manager_.get_entity("PlayerMesh");
+      let c_glow = e_player_mesh.get_component("LightsaberGlow");
+      c_glow.update_point_light();
+
+      c_render_state.composer.render();
+
+      // c_render_state.renderer.render(c_render_state.scene, c_camera.camera);
+
+      // this.csm_.update(this.camera_.matrix);
+
+      // c_render_state.opaque_pass.clearColor = new THREE.Color(0x000000);
+      // // c_render_state.opaque_pass.renderToScreen = true;
+      // c_render_state.opaque_pass.clearAlpha = 0.0;
+      // c_render_state.opaque_pass.render(
+      //   c_render_state.renderer, 
+      //   c_render_state.write_buffer, 
+      //   c_render_state.read_buffer, 
+      //   delta_time_s, 
+      //   false
+      // );
+
+      // // VIDEO HACK
+      // c_render_state.bloom_pass.renderToScreen = true;
+      // c_render_state.bloom_pass.render(
+      //   c_render_state.renderer, 
+      //   c_render_state.write_buffer, 
+      //   c_render_state.read_buffer, 
+      //   delta_time_s, 
+      //   false
+      // );
+      // // this.uiPass_.render(this.threejs_, this.writeBuffer_, this.readBuffer_, timeElapsedS, false);
+
+      // // this.radialBlur_.uniforms.center.value.set(window.innerWidth * 0.5, window.innerHeight * 0.5);
+      // // this.radialBlur_.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+      // // // VIDEO HACK
+      // // this.radialBlur_.render(this.threejs_, this.writeBuffer_, this.readBuffer_, timeElapsedS, false);
+      // c_render_state.swap_buffers();
+
+      // c_render_state.fxaa_pass.render(
+      //   c_render_state.renderer, 
+      //   c_render_state.write_buffer, 
+      //   c_render_state.read_buffer, 
+      //   delta_time_s, 
+      //   false
+      // );
+      // c_render_state.swap_buffers();
+
+      // c_render_state.gamma_pass.renderToScreen = true;
+      // c_render_state.gamma_pass.render(
+      //   c_render_state.renderer, 
+      //   c_render_state.write_buffer, 
+      //   c_render_state.read_buffer, 
+      //   delta_time_s, 
+      //   false
+      // );
     }
 
     late_update(delta_time_s) {}
+
+    on_window_resize_(e)
+    {
+      const e_singletons = this.get_entity("Singletons");
+      let c_render_state = e_singletons.get_component("RenderState");
+      let c_camera = e_singletons.get_component("PerspectiveCamera");
+
+      c_camera.camera.aspect = window.innerWidth / window.innerHeight;
+      c_camera.camera.updateProjectionMatrix();
+
+      c_render_state.renderer.setSize(window.innerWidth, window.innerHeight);
+      c_render_state.composer.setSize(window.innerWidth, window.innerHeight);
+
+      // this.csm_.updateFrustums();
+
+      // const pixelRatio = c_render_state.renderer.getPixelRatio();
+      // c_render_state.fxaa_pass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
+      // c_render_state.fxaa_pass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
+    }
   };
 
   return {

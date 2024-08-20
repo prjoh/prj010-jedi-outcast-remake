@@ -2,6 +2,7 @@
   "dependencies": {
     "@recast-navigation/three": "^0.33.0",
     "ammo.js": "github:kripken/ammo.js",
+    "postprocessing": "^6.36.0",
     "recast-navigation": "^0.33.0",
     "stats.js": "^0.17.0",
     "three": "^0.164.1",

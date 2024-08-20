@@ -19,12 +19,7 @@ export const component_camera = (() => {
 
       this.scene_ = params.scene;
 
-      this.camera = new THREE.PerspectiveCamera(
-        params.fov, 
-        params.aspect, 
-        params.near, 
-        params.far
-      );
+      this.camera = params.camera
 
       this.view_projection_matrix_ = new THREE.Matrix4();
       this.frustum_ = new THREE.Frustum();

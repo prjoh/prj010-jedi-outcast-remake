@@ -1,8 +1,9 @@
 import { log } from './Log';
 import { assert } from './Assert';
 import { time, Time } from './Time';
-import { world } from './World';
 import { resources } from './ResourceManager';
+import { test_world } from './Worlds/TestWorld';
+import { game_world } from './Worlds/GameWorld';
 
 
 export const game = (() => {
@@ -19,7 +20,8 @@ export const game = (() => {
       this.clock_ = new time.Clock(1.0 / 60.0);
 
       // TODO
-      this.current_world_ = new world.World();
+      this.current_world_ = new game_world.World();
+      // this.current_world_ = new test_world.World();
 
       // Update request handling
       this.request_update_id_ = null;
@@ -32,15 +34,25 @@ export const game = (() => {
 
     run()
     {
-      resources.ResourceManager.init(
-        this.on_load_started_.bind(this), 
-        this.on_load_progress_.bind(this), 
-        this.on_load_completed_.bind(this), 
-        this.on_load_error_.bind(this)
-      );
+      if (this.current_world_.use_resource_manager === false)
+      {
+        assert(this.current_world_ !== null, "No world has been set.");
+        this.current_world_.load();
 
-      assert(this.current_world_ !== null, "No world has been set.");
-      this.current_world_.load();
+        this.on_load_completed_();
+      }
+      else
+      {
+        resources.ResourceManager.init(
+          this.on_load_started_.bind(this), 
+          this.on_load_progress_.bind(this), 
+          this.on_load_completed_.bind(this), 
+          this.on_load_error_.bind(this)
+        );
+  
+        assert(this.current_world_ !== null, "No world has been set.");
+        this.current_world_.load();
+      }
     }
 
     on_load_started_(url, loaded, total)
@@ -62,6 +74,7 @@ export const game = (() => {
     async on_load_completed_()
     {
       await this.current_world_.init_async();
+      this.current_world_.init();
 
       progress_message.textContent = "Loading complete!";
       loading_screen.classList.add('hidden');

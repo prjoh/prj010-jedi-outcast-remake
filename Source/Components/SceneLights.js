@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import { ecs_component } from '../ECS/Component';
 import { env } from '../Env';
+import { resources } from '../ResourceManager';
 
 export const component_lights = (() => {
 
@@ -19,6 +20,11 @@ export const component_lights = (() => {
 
       this.scene_ = params.scene;
 
+      let sky_cube_map = resources.ResourceManager.get_cube_map('sky');
+      // this.scene_.background = sky_cube_map;
+      this.scene_.environment = sky_cube_map;
+      this.scene_.environmentIntensity = 0.15;
+
       // this.scene_.fog = new THREE.Fog( 0xDFE9F3, 0.1, 200 );
       // this.scene_.fog = new THREE.FogExp2(0xDFE9F3, 0.00075);
 
@@ -27,25 +33,24 @@ export const component_lights = (() => {
       // this.scene_.add( this.hemisphere_light );
 
       // this.directional_light = new THREE.DirectionalLight( 0xBBC8FF, 1.0);
-      this.directional_light = new THREE.DirectionalLight( 0xffdddd, 0.75);
+      this.directional_light = new THREE.DirectionalLight( 0xffe2e2, 0.25);
       this.directional_light.position.set(-15, 25, 15);
       this.directional_light.target = params.player;
       // this.directional_light = new THREE.DirectionalLight( 0xBBC8FF, 10.0 );
       // this.directional_light.position.set(-15, 50, 100);
       // this.directional_light.target.position.set(100, 0, -105);
-      this.scene_.add( this.directional_light );
 
       //Set up shadow properties for the light
       this.directional_light.castShadow = true;
       this.directional_light.shadow.bias = -0.001;
-      this.directional_light.shadow.mapSize.width = 1024; // default
-      this.directional_light.shadow.mapSize.height = 1024; // default
-      this.directional_light.shadow.camera.near = -50.0;
-      this.directional_light.shadow.camera.far = 250.0;
-      this.directional_light.shadow.camera.left = 25;
-      this.directional_light.shadow.camera.right = -25;
-      this.directional_light.shadow.camera.top = 25;
-      this.directional_light.shadow.camera.bottom = -25;
+      this.directional_light.shadow.mapSize.width = 2048; // default
+      this.directional_light.shadow.mapSize.height = 2048; // default
+      this.directional_light.shadow.camera.near = -64.0;
+      this.directional_light.shadow.camera.far = 256.0;
+      this.directional_light.shadow.camera.left = 64;
+      this.directional_light.shadow.camera.right = -64;
+      this.directional_light.shadow.camera.top = 64;
+      this.directional_light.shadow.camera.bottom = -64;
 
       // this.directional_light.shadow.camera.left = 5;
       // this.directional_light.shadow.camera.right = -5;
@@ -55,7 +60,9 @@ export const component_lights = (() => {
       // this.directional_light_helper = new THREE.CameraHelper( this.directional_light.shadow.camera );
       // this.scene_.add( this.directional_light_helper );
 
-      const spot_light = new THREE.SpotLight(0xffffff, 100.0, 0, Math.PI/4, 0.2);
+      this.scene_.add( this.directional_light );
+
+      const spot_light = new THREE.SpotLight(0xffffff, 25.0, 0, Math.PI/4, 0.2);
       spot_light.position.set(2.85, 0.2, -11.15);
       spot_light.target.position.set(-8, 2.5, -25);
 
@@ -67,7 +74,7 @@ export const component_lights = (() => {
       spot_light.shadow.camera.near = 0.2;
       spot_light.shadow.camera.far = 25.0;
 
-      const spot_light2 = new THREE.SpotLight(0xffffff, 100.0, 0, Math.PI/4, 0.2);
+      const spot_light2 = new THREE.SpotLight(0xffffff, 25.0, 0, Math.PI/4, 0.2);
       spot_light2.position.set(-18.85, 0.2, -11.15);
       spot_light2.target.position.set(-8, 2.5, -25);
 

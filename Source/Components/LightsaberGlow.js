@@ -32,18 +32,38 @@ export const component_lightsaber_glow = (() => {
       // point_light.add(new THREE.AxesHelper(10.0));
 
       this.point_light_ = point_light;
+      this.point_light_rotation_ = new THREE.Quaternion();
+      this.point_light_direction_ = new THREE.Vector3();
+      this.lightsaber_anchor_ = null;
+
+      this.scene_.add(point_light);
     }
 
     on_initialized()
     {
       let c_mesh = this.entity.get_component("SkinnedMeshComponent");
-      let lightsaber_mesh = c_mesh.find_child("P1_low_Cylinder008");
 
-      lightsaber_mesh.add(this.point_light_);
-      this.point_light_.position.set(0.0, 0.0, -12.5);
+      this.lightsaber_anchor_ = c_mesh.find_child("P1_low_Cylinder008");
+      this.update_point_light();
 
-      // let lightblade_mesh = c_mesh.find_child("lightblade_Cylinder001");
-      // lightblade_mesh.visible = false;
+      let e_singletons = this.entity.manager.get_entity("Singletons");
+      let c_render_state = e_singletons.get_component("RenderState");
+
+      let lightblade_mesh = c_mesh.find_child("lightblade_Cylinder001");
+
+      c_render_state.add_to_bloom_pass(lightblade_mesh);
+    }
+
+    update_point_light()
+    {
+      this.lightsaber_anchor_.getWorldPosition(this.point_light_.position);
+      this.lightsaber_anchor_.getWorldQuaternion(this.point_light_rotation_);
+
+      this.point_light_direction_.set(0.0, 0.0, 1.0);
+      this.point_light_direction_.applyQuaternion(this.point_light_rotation_);
+      this.point_light_direction_.normalize();
+
+      this.point_light_.position.add(this.point_light_direction_.multiplyScalar(-0.2));
     }
   };
 
