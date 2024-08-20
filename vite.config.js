@@ -1,6 +1,6 @@
-// vite.config.js
-import { defineConfig } from 'vite';
+// // vite.config.js
+// import { defineConfig } from 'vite';
 
-export default defineConfig({
-  base: '/outcast/',
-});
+// export default defineConfig({
+//   base: '/outcast/',
+// });
