@@ -2,7 +2,6 @@ import { log } from './Log';
 import { assert } from './Assert';
 import { time, Time } from './Time';
 import { resources } from './ResourceManager';
-import { test_world } from './Worlds/TestWorld';
 import { game_world } from './Worlds/GameWorld';
 
 
@@ -21,7 +20,6 @@ export const game = (() => {
 
       // TODO
       this.current_world_ = new game_world.World();
-      // this.current_world_ = new test_world.World();
 
       // Update request handling
       this.request_update_id_ = null;
