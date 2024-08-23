@@ -243,15 +243,9 @@ export const system_renderer = (() => {
       c_camera.camera.aspect = window.innerWidth / window.innerHeight;
       c_camera.camera.updateProjectionMatrix();
 
-      c_render_state.renderer.setSize(window.innerWidth, window.innerHeight);
-      c_render_state.composer.setSize(window.innerWidth, window.innerHeight);
-      c_render_state.ao_pass.setSize(window.innerWidth, window.innerHeight);
+      c_render_state.set_size(window.innerWidth, window.innerHeight);
 
       // this.csm_.updateFrustums();
-
-      // const pixelRatio = c_render_state.renderer.getPixelRatio();
-      // c_render_state.fxaa_pass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
-      // c_render_state.fxaa_pass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
     }
   };
 

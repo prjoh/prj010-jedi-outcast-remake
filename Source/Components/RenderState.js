@@ -37,9 +37,6 @@ export const component_renderer = (() => {
       this.scene = params.scene;
       this.camera = params.camera;
 
-      // this.canvas_size = [window.innerWidth, window.innerHeight];
-      // this.has_resized = false;
-
       const webgl_params = 
       {
         powerPreference: "high-performance",
@@ -277,6 +274,12 @@ export const component_renderer = (() => {
     add_to_bloom_pass(object_3d)
     {
       this.bloom_effect.selection.add(object_3d);
+    }
+
+    set_size(width, height)
+    {
+      this.renderer.setSize(width, height);
+      this.composer.setSize(width, height);
     }
   };
 
