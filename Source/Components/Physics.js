@@ -9,6 +9,7 @@ import {
   eCollisionGroup,
  } from '../Config';
 import { log } from '../Log';
+import { component_editor } from './Editor';
 
 
 export const component_physics = (() => {
@@ -794,9 +795,13 @@ export const component_physics = (() => {
       // Map(Listener, Map(Collider, Array(Collision_Info)))
       this.current_collisions_ = new Map();
 
+      this.debug_drawer_ = null;
+      this.draw_debug_physics = null;
+
       if (env.DEBUG_MODE)
       {
         this.debug_drawer_ = null;
+        this.draw_debug_physics = false;
       }
 
       // this.tmpRayOrigin_ = new Ammo.btVector3();
@@ -1051,12 +1056,30 @@ export const component_physics = (() => {
       if (env.DEBUG_MODE)
       {
         this.debug_drawer_ = new PhysicsDebugDrawer(scene, this.physics_world_, BT_MAX_DEBUG_VERTICES);
-        this.debug_drawer_.enable();
+        if (this.draw_debug_physics)
+        {
+          this.debug_drawer_.enable();
+        }
+        else
+        {
+          this.debug_drawer_.disable();
+        }
         this.debug_drawer_.setDebugMode(eDebugDrawMode.DDM_DrawWireframe);
 
         const e_singletons = this.entity.manager.get_entity("Singletons");
-        let c_debug = e_singletons.get_component("DebugComponent");
-        c_debug.physics_debug_drawer = this.debug_drawer_;
+        let c_editor = e_singletons.get_component("EditorComponent");
+        let debug_draw_page = c_editor.get_page(component_editor.eEditorPage.EP_DebugDraw);
+
+        debug_draw_page.add_binding(this, 'draw_debug_physics', "Physics", null, (value) => {
+          if (value === true)
+          {
+            this.debug_drawer_.enable();
+          }
+          else
+          {
+            this.debug_drawer_.disable();
+          }
+        });
       }
     }
 

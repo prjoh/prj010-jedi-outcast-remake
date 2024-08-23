@@ -20,7 +20,6 @@ import { system_enemy_behavior } from '../Systems/EnemyBehaviorSystem';
 import { system_enemy_movement } from '../Systems/EnemyMovementSystem';
 import { system_interact } from '../Systems/InteractionSystem';
 import { system_fighting } from '../Systems/FightingSystem';
-import { system_editor } from '../Systems/Editor';
 
 import { component_renderer } from '../Components/RenderState';
 import { component_camera } from '../Components/Camera';
@@ -30,7 +29,6 @@ import { component_physics } from '../Components/Physics';
 import { component_input } from '../Components/Input';
 import { component_navigation } from '../Components/Navigation';
 import { component_editor } from '../Components/Editor';
-import { component_debug } from '../Components/Debug';
 import { component_interact } from '../Components/Interactable';
 
 // import * as Sponza from '../Test/Sponza/Sponza';
@@ -154,7 +152,7 @@ export const game_world = (() => {
       // RenderState
       if (env.DEBUG_MODE)
       {
-        e_singletons.add_component(component_debug.DebugComponent);
+        // e_singletons.add_component(component_debug.DebugComponent);
         e_singletons.add_component(component_editor.EditorComponent);
       }
       e_singletons.add_component(component_input.InputComponent);
@@ -178,8 +176,11 @@ export const game_world = (() => {
         c_physics_state.create_debug_drawer(this.scene_);
       }
 
+      let player_position = new THREE.Vector3(-2.5, 0.0, 7.5);
+
       let c_camera = e_singletons.get_component("PerspectiveCamera");
-      c_camera.camera.position.set(0, 2, 5);
+      c_camera.camera.position.copy(player_position)
+        .add(0, 2, 5);
 
       /** Game Entities */
 
@@ -408,16 +409,6 @@ export const game_world = (() => {
       {
         let enemy_position = new THREE.Vector3(-10.0, 0.0, -5.0);
         let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
-        let behavior_id = eBehaviorID.BID_Stormtrooper02;
-        let behavior_params = {
-          path: [
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(0.0, 0.0, 3.0)),
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-3.0, 0.0, 3.0)),
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-3.0, 0.0, 0.0)),
-            new THREE.Vector3().copy(enemy_position),
-          ],
-        };
-  
         spawner.spawn_enemy(
           this.entity_manager_, 
           this.scene_, 
@@ -425,23 +416,21 @@ export const game_world = (() => {
           enemy_position,
           enemy_rotation,
           "Stormtrooper_" + 6,
-          behavior_id,
-          behavior_params
+          eBehaviorID.BID_Stormtrooper02,
+          {
+            path: [
+              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(0.0, 0.0, 3.0)),
+              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-3.0, 0.0, 3.0)),
+              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-3.0, 0.0, 0.0)),
+              new THREE.Vector3().copy(enemy_position),
+            ],
+          }
         ); 
       }
 
       {
         let enemy_position = new THREE.Vector3(-17.5, 0.0, -5.0);
         let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
-        let behavior_id = eBehaviorID.BID_Stormtrooper02;
-        let behavior_params = {
-          path: [
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(2.5, 0.0, 3.0)),
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-2.5, 0.0, 3.0)),
-            new THREE.Vector3().copy(enemy_position),
-          ],
-        };
-  
         spawner.spawn_enemy(
           this.entity_manager_, 
           this.scene_, 
@@ -449,13 +438,40 @@ export const game_world = (() => {
           enemy_position,
           enemy_rotation,
           "Stormtrooper_" + 7,
-          behavior_id,
-          behavior_params
+          eBehaviorID.BID_Stormtrooper02,
+          {
+            path: [
+              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(2.5, 0.0, 3.0)),
+              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-2.5, 0.0, 3.0)),
+              new THREE.Vector3().copy(enemy_position),
+            ],
+          }
+        ); 
+      }
+
+      /*
+       * TODO:
+       *  - 20_FightIdle
+       *  - 21_ShootStanding
+       */
+      {
+        let enemy_position = new THREE.Vector3(-2.0, 0.0, -5.0);
+        let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
+        spawner.spawn_enemy(
+          this.entity_manager_, 
+          this.scene_, 
+          stormtrooper_materials, 
+          enemy_position,
+          enemy_rotation,
+          "Stormtrooper_" + 8,
+          eBehaviorID.BID_Stormtrooper01,
+          {
+            animation_param_id: "idle",
+          }
         ); 
       }
 
       // Player
-      let player_position = new THREE.Vector3(0.0, 0.0, 0.0);
       let player_rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI, 0));
       let e_player = spawner.spawn_player(this.entity_manager_, this.scene_, directional_light_target, player_position, player_rotation);
 
@@ -540,10 +556,6 @@ export const game_world = (() => {
       /*
        * Setup systems
        */
-      if (env.DEBUG_MODE)
-      {
-        this.entity_manager_.register_system(system_editor.EditorSystem);
-      }
       this.entity_manager_.register_system(system_input.InputSystem);
       this.entity_manager_.register_system(system_player_movement.PlayerMovementSystem);
       this.entity_manager_.register_system(system_enemy_behavior.EnemyBehaviorSystem);

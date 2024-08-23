@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { ecs_component } from '../ECS/Component';
 import { env } from '../Env';
 import { resources } from '../ResourceManager';
+import { component_editor } from './Editor';
 
 export const component_lights = (() => {
 
@@ -20,31 +21,45 @@ export const component_lights = (() => {
 
       this.scene_ = params.scene;
 
+      /////////////////////
+      // Environment Map //
+      /////////////////////
+      
       let sky_cube_map = resources.ResourceManager.get_cube_map('sky');
-      // this.scene_.background = sky_cube_map;
+      // this.scene_.background = sky_cube_map;  // Debug
       this.scene_.environment = sky_cube_map;
       this.scene_.environmentIntensity = 0.15;
 
+      /////////
+      // Fog //
+      /////////
+
       // this.scene_.fog = new THREE.Fog( 0xDFE9F3, 0.1, 200 );
       // this.scene_.fog = new THREE.FogExp2(0xDFE9F3, 0.00075);
+
+      //////////////////////
+      // Hemisphere Light //
+      //////////////////////
 
       // this.hemisphere_light = new THREE.HemisphereLight( 0xFFACAC, 0x8890BA, 0.3 );
       // this.hemisphere_light = new THREE.HemisphereLight( 0xd5dcff, 0xc58282, 0.1 );
       // this.scene_.add( this.hemisphere_light );
 
-      // this.directional_light = new THREE.DirectionalLight( 0xBBC8FF, 1.0);
-      this.directional_light = new THREE.DirectionalLight( 0xffe2e2, 0.25);
-      this.directional_light.position.set(-15, 25, 15);
+      ///////////////////////
+      // Directional Light //
+      ///////////////////////
+
+      this.directional_light_position = new THREE.Vector3(-15, 25, 15);
+
+      this.directional_light = new THREE.DirectionalLight( 0xffe2e2, 0.4);
+      this.directional_light.position.copy(this.directional_light_position);
       this.directional_light.target = params.player;
-      // this.directional_light = new THREE.DirectionalLight( 0xBBC8FF, 10.0 );
-      // this.directional_light.position.set(-15, 50, 100);
-      // this.directional_light.target.position.set(100, 0, -105);
 
       //Set up shadow properties for the light
       this.directional_light.castShadow = true;
-      this.directional_light.shadow.bias = -0.001;
-      this.directional_light.shadow.mapSize.width = 2048; // default
-      this.directional_light.shadow.mapSize.height = 2048; // default
+      this.directional_light.shadow.bias = -0.0007;
+      this.directional_light.shadow.mapSize.width = 2048;
+      this.directional_light.shadow.mapSize.height = 2048;
       this.directional_light.shadow.camera.near = -64.0;
       this.directional_light.shadow.camera.far = 256.0;
       this.directional_light.shadow.camera.left = 64;
@@ -52,15 +67,11 @@ export const component_lights = (() => {
       this.directional_light.shadow.camera.top = 64;
       this.directional_light.shadow.camera.bottom = -64;
 
-      // this.directional_light.shadow.camera.left = 5;
-      // this.directional_light.shadow.camera.right = -5;
-      // this.directional_light.shadow.camera.top = 5;
-      // this.directional_light.shadow.camera.bottom = -5;
-
-      // this.directional_light_helper = new THREE.CameraHelper( this.directional_light.shadow.camera );
-      // this.scene_.add( this.directional_light_helper );
-
       this.scene_.add( this.directional_light );
+
+      /////////////////
+      // Spot Lights //
+      /////////////////
 
       const spot_light = new THREE.SpotLight(0xffffff, 25.0, 0, Math.PI/4, 0.2);
       spot_light.position.set(2.85, 0.2, -11.15);
@@ -68,11 +79,11 @@ export const component_lights = (() => {
 
       //Set up shadow properties for the light
       spot_light.castShadow = true;
-      spot_light.shadow.bias = -0.01;
-      spot_light.shadow.mapSize.width = 512; // default
-      spot_light.shadow.mapSize.height = 512; // default
+      spot_light.shadow.bias = -0.02;
+      spot_light.shadow.mapSize.width = 512;
+      spot_light.shadow.mapSize.height = 512;
       spot_light.shadow.camera.near = 0.2;
-      spot_light.shadow.camera.far = 25.0;
+      spot_light.shadow.camera.far = 10.0;
 
       const spot_light2 = new THREE.SpotLight(0xffffff, 25.0, 0, Math.PI/4, 0.2);
       spot_light2.position.set(-18.85, 0.2, -11.15);
@@ -80,52 +91,72 @@ export const component_lights = (() => {
 
       //Set up shadow properties for the light
       spot_light2.castShadow = true;
-      spot_light2.shadow.bias = -0.01;
-      spot_light2.shadow.mapSize.width = 512; // default
-      spot_light2.shadow.mapSize.height = 512; // default
+      spot_light2.shadow.bias = -0.02;
+      spot_light2.shadow.mapSize.width = 512;
+      spot_light2.shadow.mapSize.height = 512;
       spot_light2.shadow.camera.near = 0.2;
-      spot_light2.shadow.camera.far = 25.0;
+      spot_light2.shadow.camera.far = 10.0;
+
+      const spot_light3 = new THREE.SpotLight(0xffffff, 75.0, 0, Math.PI/4, 0.4);
+      spot_light3.position.set(-26.5, 5.0, 7.6);
+      spot_light3.target.position.set(-23.0, 0.0, -1.0);
+      
+      spot_light3.castShadow = true;
+      spot_light3.shadow.bias = -0.0001;
+      spot_light3.shadow.mapSize.width = 1024;
+      spot_light3.shadow.mapSize.height = 1024;
+      spot_light3.shadow.camera.near = 0.01;
+      spot_light3.shadow.camera.far = 25.0;
       
       this.scene_.add( spot_light );
       this.scene_.add( spot_light2 );
+      this.scene_.add( spot_light3 );
+
+      ///////////
+      // Debug //
+      ///////////
 
       this.debug_light_helpers_ = null;
-      this.debug_dynamic_lights_ = null;
+      this.draw_debug_lights = null;
+      this.lighting_pos_dir = null;
+      this.lighting_col_dir = null;
+      this.spot_lights = null;
+      this.spot_lights_enable = null;
+      this.spot_lights_shadow = null;
+      this.spot_light_shadow_bias = null;
 
       if (env.DEBUG_MODE)
       {
+        this.draw_debug_lights = false;
+
         this.debug_light_helpers_ = [];
         this.debug_light_helpers_.push(new THREE.DirectionalLightHelper( this.directional_light ));
         this.debug_light_helpers_.push(new THREE.SpotLightHelper( spot_light ));
         this.debug_light_helpers_.push(new THREE.SpotLightHelper( spot_light2 ));
+        this.debug_light_helpers_.push(new THREE.SpotLightHelper( spot_light3 ));
 
         for (const light of this.debug_light_helpers_)
         {
+          light.visible = this.draw_debug_lights;
           this.scene_.add( light );
         }
 
-        this.debug_dynamic_lights_ = [];
-        this.debug_dynamic_lights_.push(spot_light);
-        this.debug_dynamic_lights_.push(spot_light2);
+        this.lighting_pos_dir = { 
+          x: this.directional_light_position.x, 
+          y: this.directional_light_position.y, 
+          z: this.directional_light_position.z 
+        };
+        this.lighting_col_dir = '#ffe2e2';
+
+        this.spot_lights_enable = true;
+        this.spot_lights_shadow = true;
+        this.spot_light_shadow_bias = -0.02;
+
+        this.spot_lights = [];
+        this.spot_lights.push(spot_light);
+        this.spot_lights.push(spot_light2);
+        this.spot_lights.push(spot_light3);
       }
-
-      // let point_light = new THREE.PointLight(0xffffff, 5.0);
-      // point_light.position.set(-6, 2, -3);
-      // this.scene_.add( point_light );
-
-      // /*
-      //  * SHADOW SETTINGS
-      //  */
-      // this.directional_light.castShadow = true;
-      // this.directional_light.shadow.bias = -0.001;
-      // this.directional_light.shadow.mapSize.width = 4096;
-      // this.directional_light.shadow.mapSize.height = 4096;
-      // this.directional_light.shadow.camera.near = 1.0;
-      // this.directional_light.shadow.camera.far = 50.0;
-      // this.directional_light.shadow.camera.left = 10;
-      // this.directional_light.shadow.camera.right = -10;
-      // this.directional_light.shadow.camera.top = 10;
-      // this.directional_light.shadow.camera.bottom = -10;
     }
 
     on_initialized()
@@ -135,21 +166,54 @@ export const component_lights = (() => {
       if (env.DEBUG_MODE)
       {
         const e_singletons = this.entity.manager.get_entity("Singletons");
-      
-        let c_debug = e_singletons.get_component("DebugComponent");
+    
+        let c_editor = e_singletons.get_component("EditorComponent");
   
-        for (const helper of this.debug_light_helpers_)
-        {
-          c_debug.debug_lights.push(helper);
-        }
+        let debug_draw_page = c_editor.get_page(component_editor.eEditorPage.EP_DebugDraw);
 
-        // c_debug.hemisphere_light = this.hemisphere_light;
-        c_debug.directional_light = this.directional_light;
+        debug_draw_page.add_binding(this, 'draw_debug_lights', "Lights", null, (value) => {
+          for (let light of this.debug_light_helpers_)
+          {
+            light.visible = value;
+          }
+        });
 
-        for (const light of this.debug_dynamic_lights_)
-        {
-          c_debug.dynamic_lights.push(light);
-        }
+        let debug_lighting_page = c_editor.get_page(component_editor.eEditorPage.EP_Lighting);
+
+        debug_lighting_page.add_binding(this.scene_, 'environmentIntensity', "Env Intensity", { min: 0.0, max: 3.0 });
+
+        debug_lighting_page.create_folder("Directional Light");
+        debug_lighting_page.add_folder_binding("Directional Light", this.directional_light, 'visible', "Enable");
+        debug_lighting_page.add_folder_binding("Directional Light", this, 'lighting_pos_dir', "Pos", null, (value) => {
+          this.directional_light_position.set(value.x, value.y, value.z);
+        });
+        debug_lighting_page.add_folder_binding("Directional Light", this.directional_light, 'intensity', "Intensity", { min: 0.0, max: 3.0 });
+        debug_lighting_page.add_folder_binding("Directional Light", this, 'lighting_col_dir', "Color", { view: 'color' }, (value) => {
+          this.directional_light.color.setHex(Number(`0x${value.substr(1)}`));
+        });
+        debug_lighting_page.add_folder_binding("Directional Light", this.directional_light, 'castShadow', "Shadows");
+        debug_lighting_page.add_folder_binding("Directional Light", this.directional_light.shadow, 'bias', "Shadow Bias", { min: -0.002, max: 0.0, step: 0.0001 });
+
+        debug_lighting_page.create_folder("Spot Lights");
+        debug_lighting_page.add_folder_binding("Spot Lights", this, 'spot_lights_enable', "Enable", null, (value) => {
+          for (let light of this.spot_lights)
+          {
+            light.visible = value;
+          }
+        });
+        debug_lighting_page.add_folder_binding("Spot Lights", this, 'spot_lights_shadow', "Shadows", null, (value) => {
+          for (let light of this.spot_lights)
+          {
+            light.castShadow = value;
+          }
+        });
+        debug_lighting_page.add_folder_binding("Spot Lights", this, 'spot_light_shadow_bias', "Shadow Bias", { min: -0.05, max: 0.00, step: 0.0001 }, (value) => {
+          for (let light of this.spot_lights)
+            {
+              light.shadow.bias = value;
+            }
+        });
+
       }
     }
   };

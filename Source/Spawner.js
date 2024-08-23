@@ -30,7 +30,7 @@ export const spawner = (() => {
 
     let e_player = entity_manager.create_entity("Player");
     let c_player_transform = e_player.get_component("Transform");
-    c_player_transform.position = position.add(new THREE.Vector3(0.0, 0.85, 0.0));
+    c_player_transform.position = new THREE.Vector3(0.0, 0.85, 0.0).add(position);
     c_player_transform.rotation = rotation;
     e_player.add_component(component_command.PlayerCommander);
     e_player.add_component(component_controls.CharacterControls);
@@ -50,7 +50,7 @@ export const spawner = (() => {
 
     let e_player_mesh = entity_manager.create_entity("PlayerMesh", e_player);
     let c_player_mesh_transform = e_player_mesh.get_component("Transform");
-    c_player_mesh_transform.position = new THREE.Vector3(0.0, 0.0, 0.0);
+    c_player_mesh_transform.position = position;
     e_player_mesh.add_component(component_command.PlayerCommander);
     e_player_mesh.add_component(component_fighting.FightingState);
     e_player_mesh.add_component(component_animation.AnimationController, {

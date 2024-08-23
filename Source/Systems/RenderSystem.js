@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { Time } from '../Time';
+import { env } from '../Env';
 import { ecs_system } from '../ECS/System';
 import { ecs_component } from '../ECS/Component';
 
@@ -165,13 +165,21 @@ export const system_renderer = (() => {
       const c_player_transform = e_player.get_component("Transform");
 
       let directional_light = c_scene_lights.directional_light;
-      directional_light.position.add(c_player_transform.position);
+      const directional_light_position = c_scene_lights.directional_light_position;
+
+      directional_light.position.copy(c_player_transform.position)
+        .add(directional_light_position);
 
       const e_player_mesh = this.entity_manager_.get_entity("PlayerMesh");
       let c_glow = e_player_mesh.get_component("LightsaberGlow");
       c_glow.update_point_light();
 
       c_render_state.composer.render();
+
+      if (env.DEBUG_MODE)
+      {
+        c_render_state.stats.update();
+      }
 
       // c_render_state.renderer.render(c_render_state.scene, c_camera.camera);
 
@@ -237,6 +245,7 @@ export const system_renderer = (() => {
 
       c_render_state.renderer.setSize(window.innerWidth, window.innerHeight);
       c_render_state.composer.setSize(window.innerWidth, window.innerHeight);
+      c_render_state.ao_pass.setSize(window.innerWidth, window.innerHeight);
 
       // this.csm_.updateFrustums();
 

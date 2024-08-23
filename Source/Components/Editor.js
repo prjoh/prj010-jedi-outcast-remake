@@ -1,15 +1,80 @@
 import { Pane } from 'tweakpane';
 
 import { ecs_component } from '../ECS/Component';
+import { assert } from '../Assert';
 
 export const component_editor = (() => {
 
   const eEditorPage = Object.freeze({
-    // EP_EditorMode: 0,
     EP_Profiling: 0,
     EP_DebugDraw: 1,
     EP_Lighting: 2,
+    EP_PostFX: 3,
   });
+
+  const editor_page_definitions = [
+    {title: 'Profiling'},
+    {title: 'Debug Draw'},
+    {title: 'Lighting'},
+    {title: 'PostFX'},
+  ];
+
+  class EditorPage
+  {
+    constructor(page_name, page_obj)
+    {
+      this.name = page_name;
+      this.page_obj_ = page_obj;
+      this.folders_ = new Map();
+    }
+
+    create_folder(folder_name, is_expanded = true)
+    {
+      assert(this.folders_.has(folder_name) === false);
+
+      const folder = this.page_obj_.addFolder({
+        title: folder_name,
+        expanded: is_expanded,
+      });
+      this.folders_.set(folder_name, folder);
+
+      return folder;
+    }
+
+    add_folder_binding(folder_name, object_reference, value_key, label, binding_config, callback)
+    {
+      assert(this.folders_.has(folder_name));
+
+      let folder = this.folders_.get(folder_name);
+
+      const label_config = { label: label };
+      binding_config = binding_config ? { ...label_config, ...binding_config } : label_config;
+
+      folder.addBinding(object_reference, value_key, binding_config)
+        .on('change', (ev) => {
+          if (callback !== undefined)
+          {
+            callback(ev.value);
+          }
+        });
+    }
+
+    add_binding(object_reference, value_key, label, binding_config, callback)
+    {
+      assert(value_key in object_reference);
+
+      const label_config = { label: label };
+      binding_config = binding_config ? { ...label_config, ...binding_config } : label_config;
+
+      this.page_obj_.addBinding(object_reference, value_key, binding_config)
+        .on('change', (ev) => {
+          if (callback !== undefined)
+          {
+            callback(ev.value);
+          }
+        });
+    }
+  };
 
   class EditorComponent extends ecs_component.Component
   {
@@ -23,152 +88,35 @@ export const component_editor = (() => {
     {
       super();
 
-      this.params = {
-        // Editor Mode
-        // editor_mode_enable: false,
-        // Profiling
-        stats_mode: 0,
-        render_info_geometries: 0,
-        render_info_textures: 0,
-        render_info_draw_calls: 0,
-        render_info_triangles: 0,
-        // Debug Draw
-        debug_draw_all: false,
-        debug_draw_camera: false,
-        debug_draw_lights: false,
-        debug_draw_physics: false,
-        debug_draw_navmesh: false,
-        debug_draw_navagent: false,
-        debug_draw_instanced_bs: false,
-        // Lighting
-        // lighting_hemi_enable: true,
-        // lighting_hemi_pos: { x: 0.0, y: 0.0, z: 0.0 },
-        // lighting_hemi_intensity: 0.0,
-        // lighting_hemi_color_sky: '#000000',
-        // lighting_hemi_color_ground: '#000000',
-        lighting_dir_enable: true,
-        lighting_dir_pos: { x: 0.0, y: 0.0, z: 0.0 },
-        lighting_dir_intensity: 0.0,
-        lighting_dir_color: '#000000',
-        // lighting_spot_lights: [],
-        lighting_dynamic_enable: true,
-      };
-
       this.pane_ = new Pane({
         expanded: true,
-        title: "Edit Pane",
+        title: "Editor",
       });
 
-      let tab = this.pane_.addTab({
-        pages: [
-          // {title: 'Editor Mode'},
-          {title: 'Profiling'},
-          {title: 'Debug Draw'},
-          {title: 'Lighting'},
-        ],
+      this.editor_pages_ = [];
+
+      this.editor_tab_ = this.pane_.addTab({
+        pages: editor_page_definitions,
       });
 
-      // Editor Mode
-
-      // let page_editor = tab.pages[eEditorPage.EP_EditorMode];
-
-      // page_editor.addBinding(this.params, 'editor_mode_enable', { label: 'Enabled' });
-
-      // Profiling
-
-      let page_profiler = tab.pages[eEditorPage.EP_Profiling];
-
-      page_profiler.addBinding(this.params, 'stats_mode', {
-        label: 'Stats',
-        options: {
-          fps: 0,
-          ms: 1,
-          memory: 2,
-          disable: 3,
-        },
-      });
-
-      page_profiler.addBinding(this.params, 'render_info_geometries', {
-        label: 'Geometries (MB)',
-        readonly: true,
-        format: (v) => v.toFixed(1),
-      });
-      page_profiler.addBinding(this.params, 'render_info_textures', {
-        label: 'Textures (MB)',
-        readonly: true,
-        format: (v) => v.toFixed(1),
-      });
-      page_profiler.addBinding(this.params, 'render_info_draw_calls', {
-        label: 'Draw Calls',
-        readonly: true,
-        format: (v) => Math.trunc(v),
-      });
-      page_profiler.addBinding(this.params, 'render_info_triangles', {
-        label: 'Triangles',
-        readonly: true,
-        format: (v) => Math.trunc(v),
-      });
-
-      // Debug Draw
-
-      let page_debug_draw = tab.pages[eEditorPage.EP_DebugDraw];
-
-      page_debug_draw.addBinding(this.params, 'debug_draw_all', { label: 'All' })
-        .on('change', (ev) => {
-          this.params.debug_draw_camera = ev.value;
-          this.params.debug_draw_lights = ev.value;
-          this.params.debug_draw_physics = ev.value;
-          this.params.debug_draw_navmesh = ev.value;
-          this.params.debug_draw_navagent = ev.value;
-          this.params.debug_draw_instanced_bs = ev.value;
-          this.refresh();
-        });
-      page_debug_draw.addBlade({
-        view: 'separator',
-      });
-      // page_debug_draw.addBinding(this.params, 'debug_draw_camera', { label: 'Camera' });
-      page_debug_draw.addBinding(this.params, 'debug_draw_lights', { label: 'Lights' });
-      page_debug_draw.addBinding(this.params, 'debug_draw_physics', { label: 'Physics' });
-      page_debug_draw.addBinding(this.params, 'debug_draw_navmesh', { label: 'NavMesh' });
-      page_debug_draw.addBinding(this.params, 'debug_draw_navagent', { label: 'NavAgent' });
-      page_debug_draw.addBinding(this.params, 'debug_draw_instanced_bs', { label: 'InstancedBoundingSpheres' });
-
-      // Lighting
-
-      let page_lighting = tab.pages[eEditorPage.EP_Lighting];
-
-      // let folder_hemi_light = page_lighting.addFolder({
-      //   title: "Hemisphere Light",
-      //   expanded: true,
-      // });
-
-      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_enable', { label: 'Enabled' });
-      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_pos', { label: 'Position' });
-      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_intensity', { label: 'Intensity' });
-      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_color_sky', { label: 'Sky Color', view: 'color' });
-      // folder_hemi_light.addBinding(this.params, 'lighting_hemi_color_ground', { label: 'Ground Color', view: 'color' });
-
-      let folder_dir_light = page_lighting.addFolder({
-        title: "Directional Light",
-        expanded: true,
-      });
-
-      folder_dir_light.addBinding(this.params, 'lighting_dir_enable', { label: 'Enabled' });
-      folder_dir_light.addBinding(this.params, 'lighting_dir_pos', { label: 'Position' });
-      folder_dir_light.addBinding(this.params, 'lighting_dir_intensity', { label: 'Intensity' });
-      folder_dir_light.addBinding(this.params, 'lighting_dir_color', { label: 'Color', view: 'color' });
-
-      page_lighting.addBinding(this.params, 'lighting_dynamic_enable', { label: 'Dynamic Lights' });
+      for (let i = 0; i < editor_page_definitions.length; ++i)
+      {
+        const page_name = editor_page_definitions[i].title;
+        const page_obj = this.editor_tab_.pages[i];
+        this.editor_pages_.push(new EditorPage(page_name, page_obj));
+      }
     }
 
-    refresh()
+    get_page(editor_page)
     {
-      this.pane_.refresh();
+      assert(Object.values(eEditorPage).includes(editor_page));
+      return this.editor_pages_[editor_page];
     }
   };
 
   return {
     EditorComponent: EditorComponent,
+    eEditorPage: eEditorPage,
   };
 
 })();

@@ -1,9 +1,13 @@
+import Stats from 'stats.js';
 import * as THREE from 'three';
 import * as PPROC from 'postprocessing';
+import { N8AOPostPass } from 'n8ao'
 
 import { ecs_component } from '../ECS/Component';
 // import { LuminosityHighPassShader } from '../Shaders/LuminosityShader.js';
 import { env } from '../Env';
+import { component_editor } from './Editor';
+import { resources } from '../ResourceManager';
 // import * as config from '../Config';
 
 // import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -86,8 +90,24 @@ export const component_renderer = (() => {
         frameBufferType: THREE.HalfFloatType
       });
 
+      // Ambient Occlusion
+      this.ao_pass = new N8AOPostPass(
+        new THREE.Scene(),
+        this.camera,
+        window.innerWidth,
+        window.innerHeight
+      );
+      this.ao_pass.configuration.halfRes = true;
+      this.ao_pass.configuration.aoSamples = 16;
+      this.ao_pass.configuration.denoiseSamples = 8;
+      this.ao_pass.configuration.aoRadius = 0.54;
+      this.ao_pass.configuration.denoiseRadius = 15.0;
+      this.ao_pass.configuration.intensity = 2.5;
+      this.ao_pass.configuration.distanceFalloff = 1.0;
+
+      // Bloom
       this.bloom_effect = new PPROC.SelectiveBloomEffect(this.scene, this.camera, {
-        intensity: 7,
+        intensity: 10.0,
         mipmapBlur: true,
         luminanceThreshold: 0,
         luminanceSmoothing: 0.2,
@@ -95,7 +115,8 @@ export const component_renderer = (() => {
         resolutionScale: 4
       });
 
-      const tone_mapping_effect = new PPROC.ToneMappingEffect({
+      // Tone Mapping
+      this.tone_mapping_effect = new PPROC.ToneMappingEffect({
         mode: PPROC.ToneMappingMode.REINHARD2_ADAPTIVE,
         resolution: 256,
         whitePoint: 16.0,
@@ -106,58 +127,43 @@ export const component_renderer = (() => {
       });
       this.renderer.toneMappingExposure = 2.0;
   
+      // SMAA
+      this.smaa_effect = new PPROC.SMAAEffect({
+        edgeDetectionMode: PPROC.EdgeDetectionMode.COLOR,
+        preset: PPROC.SMAAPreset.ULTRA,
+        predicationMode: PPROC.PredicationMode.DEPTH,
+      });
+
+      this.smaa_effect.edgeDetectionMaterial.edgeDetectionThreshold = 0.02;
+      this.smaa_effect.edgeDetectionMaterial.predicationThreshold = 0.002;
+      this.smaa_effect.edgeDetectionMaterial.predicationScale = 1.0;
+
+      // Setup passes
       this.opaque_pass = new PPROC.RenderPass(this.scene, this.camera);
+      this.smaa_pass = new PPROC.EffectPass(this.camera, this.smaa_effect);
       this.bloom_pass = new PPROC.EffectPass(this.camera, this.bloom_effect);
-      this.tone_mapping_pass = new PPROC.EffectPass(this.camera, tone_mapping_effect);
+      this.tone_mapping_pass = new PPROC.EffectPass(this.camera, this.tone_mapping_effect);
 
       this.composer.addPass(this.opaque_pass);
+      this.composer.addPass(this.smaa_pass);
+      this.composer.addPass(this.ao_pass);
       this.composer.addPass(this.bloom_pass);
       this.composer.addPass(this.tone_mapping_pass);
 
-      // const parameters = {
-      //   minFilter: THREE.NearestFilter,
-      //   magFilter: THREE.NearestFilter,
-      //   format: THREE.RGBAFormat,
-      //   type: THREE.FloatType,
-      //   // stencilBuffer: false,
-      // };
+      ///////////
+      // Debug //
+      ///////////
 
-      // // const render_target = new THREE.WebGLRenderTarget(
-      // //     window.innerWidth, window.innerHeight, parameters);
-      // // this.write_buffer = render_target;
-      // // this.read_buffer = render_target.clone();
+      this.stats = null;
+      this.stats_mode = null;
 
-      // this.composer = new EffectComposer(this.renderer);
-      // this.composer.setPixelRatio(window.devicePixelRatio);
-      // this.composer.setSize(window.innerWidth, window.innerHeight);
-  
-      // // this.fxaa_pass = new ShaderPass(FXAAShader);
-      // // this.gtao_pass = new GTAOPass(this.scene, this.camera);
-      // this.bloom_pass = new UnrealBloomPass(
-      //     new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-      // this.bloom_pass.radius = 0.0;
-      // this.bloom_pass.strength = 1.0;
-      // this.bloom_pass.materialHighPassFilter = new THREE.ShaderMaterial({
-      //   uniforms: this.bloom_pass.highPassUniforms,
-      //   vertexShader: LuminosityHighPassShader.vertexShader,
-      //   fragmentShader: LuminosityHighPassShader.fragmentShader,
-      //   defines: {}
-      // });
-
-      // this.opaque_pass = new RenderPass(this.scene, this.camera);
-      // // this.gamma_pass = new ShaderPass(GammaCorrectionShader);
-
-      // this.composer.addPass(this.opaque_pass);
-      // // this.composer.addPass(this.motionBlurPass_);
-      // // this.composer.addPass(this.gtao_pass);
-      // this.composer.addPass(this.bloom_pass);
-      // // this.composer.addPass(this.uiPass_);
-      // // this.composer.addPass(this.gamma_pass);
-      // // this.composer.addPass(this.fxaa_pass);
-      // this.composer.addPass( new OutputPass() );
-
-      // TODO: hack
-      // window.onresize = (event) => { this.on_window_resize(); };
+      if (env.DEBUG_MODE)
+      {
+        this.stats = new Stats();
+        this.stats_mode = 0; // 0: fps, 1: ms, 2: mb, 3+: custom
+        const canvas_parent = document.getElementById('scene');
+        canvas_parent.appendChild(this.stats.dom);
+      }
     }
 
     on_initialized()
@@ -167,10 +173,99 @@ export const component_renderer = (() => {
       if (env.DEBUG_MODE)
       {
         const e_singletons = this.entity.manager.get_entity("Singletons");
-      
-        let c_debug = e_singletons.get_component("DebugComponent");
+    
+        let c_editor = e_singletons.get_component("EditorComponent");
   
-        c_debug.renderer_info = this.renderer.info;
+        let profiling_page = c_editor.get_page(component_editor.eEditorPage.EP_Profiling);
+  
+        profiling_page.add_binding(
+          this, 
+          'stats_mode', 
+          "Stats", 
+          { 
+            options: {
+              fps: 0,
+              ms: 1,
+              memory: 2,
+              disable: 3,
+            }
+          },
+          (value) => {
+            this.stats.showPanel(value);
+          }
+        );
+
+        profiling_page.add_binding(
+          this.renderer.info.memory, 
+          'geometries', 
+          "Geometries (MB)", 
+          {
+            readonly: true,
+            format: (v) => v.toFixed(1),
+          }
+        );
+        profiling_page.add_binding(
+          this.renderer.info.memory, 
+          'textures', 
+          "Textures (MB)'", 
+          {
+            readonly: true,
+            format: (v) => v.toFixed(1),
+          }
+        );
+        profiling_page.add_binding(
+          this.renderer.info.render, 
+          'calls', 
+          "Draw Calls", 
+          {
+            readonly: true,
+            format: (v) => Math.trunc(v),
+          }
+        );
+        profiling_page.add_binding(
+          this.renderer.info.render, 
+          'triangles', 
+          "Triangles", 
+          {
+            readonly: true,
+            format: (v) => Math.trunc(v),
+          }
+        );
+
+        let postfx_page = c_editor.get_page(component_editor.eEditorPage.EP_PostFX);
+
+        postfx_page.create_folder("SMAA", false);
+        postfx_page.create_folder("Ambient Occlusion", false);
+        postfx_page.create_folder("Bloom", false);
+        postfx_page.create_folder("Tonemapping", false);
+
+        postfx_page.add_folder_binding("SMAA", this.smaa_pass, 'enabled', "Enable");
+
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass, 'enabled', "Enable");
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass.configuration, 'halfRes', "Half Res");
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass.configuration, 'aoSamples', "AO Samples", { min: 1, max: 64, step: 1 });
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass.configuration, 'denoiseSamples', "Denoise Samples", { min: 1, max: 64, step: 1 });
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass.configuration, 'aoRadius', "AO Radius", { min: 0.0, max: 10.0 });
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass.configuration, 'denoiseRadius', "Denoise Radius", { min: 0.0, max: 24.0 });
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass.configuration, 'intensity', "Intensity", { min: 0.0, max: 10.0 });
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass.configuration, 'distanceFalloff', "Distance Falloff", { min: 0.0, max: 10.0 });
+        postfx_page.add_folder_binding("Ambient Occlusion", this.ao_pass.configuration, 'transparencyAware', "Transparency Aware");
+
+        postfx_page.add_folder_binding("Bloom", this.bloom_pass, 'enabled', "Enable");
+        postfx_page.add_folder_binding("Bloom", this.bloom_effect, 'intensity', "Intensity", { min: 0.0, max: 20.0 });
+        postfx_page.add_folder_binding("Bloom", this.bloom_effect.mipmapBlurPass, 'radius', "Radius", { min: 0.0, max: 1.0 });
+        postfx_page.add_folder_binding("Bloom", this.bloom_effect.luminanceMaterial, 'threshold', "Luminence Threshold", { min: 0.0, max: 1.0 });
+        postfx_page.add_folder_binding("Bloom", this.bloom_effect.luminanceMaterial, 'smoothing', "Luminence Smoothing", { min: 0.0, max: 1.0 });
+
+        let adaptiveLuminancePass = this.tone_mapping_effect.adaptiveLuminancePass;
+        let adaptiveLuminanceMaterial = adaptiveLuminancePass.fullscreenMaterial;
+
+        postfx_page.add_folder_binding("Tonemapping", this.renderer, 'toneMappingExposure', "Exposure", { min: 0.0, max: 4.0 });
+        postfx_page.add_folder_binding("Tonemapping", this.tone_mapping_effect, 'whitePoint', "White Point", { min: 0.0, max: 32.0 });
+        postfx_page.add_folder_binding("Tonemapping", this.tone_mapping_effect, 'middleGrey', "Middle Grey", { min: 0.0, max: 1.0 });
+        postfx_page.add_folder_binding("Tonemapping", this.tone_mapping_effect, 'averageLuminance', "Avg Luminence", { min: 0.0, max: 1.0 });
+        postfx_page.add_folder_binding("Tonemapping", adaptiveLuminanceMaterial, 'minLuminance', "Min Luminence", { min: 0.0, max: 1.0 });
+        postfx_page.add_folder_binding("Tonemapping", adaptiveLuminanceMaterial, 'adaptationRate', "Adapt Rate", { min: 0.0, max: 3.0 });
       }
     }
 
@@ -183,36 +278,6 @@ export const component_renderer = (() => {
     {
       this.bloom_effect.selection.add(object_3d);
     }
-
-    // TODO: Move to RenderSystem
-    // on_window_resize()
-    // {
-    //   this.canvas_size[0] = window.innerWidth;
-    //   this.canvas_size[1] = window.innerHeight;
-    //   this.has_resized = true;
-    // }
-
-    // swap_buffers()
-    // {
-    //   const tmp = this.write_buffer;
-    //   this.write_buffer = this.read_buffer;
-    //   this.read_buffer = tmp;
-    // }
-
-    // TODO: THIS IS STILL BROKEN!
-    // enable_pointer_lock()
-    // {
-    //   this.renderer.domElement.onclick = (event) => {
-    //     this.renderer.domElement.requestPointerLock().catch(() => {
-    //       setTimeout(() => { this.renderer.domElement.requestPointerLock(); }, config.POINTER_LOCK_TIMEOUT);
-    //     });
-    //   };
-    // }
-
-    // disable_pointer_lock()
-    // {
-    //   this.renderer.domElement.onclick = null;
-    // }
   };
 
   return {

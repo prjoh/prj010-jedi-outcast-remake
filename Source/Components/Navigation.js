@@ -9,72 +9,9 @@ import { NavMeshQuery, importNavMesh } from 'recast-navigation';
 import { NavMeshHelper } from 'recast-navigation/three';
 import { log } from '../Log';
 import { assert } from '../Assert';
+import { component_editor } from './Editor';
 
 export const component_navigation = (() => {
-
-  // class NavMeshQueryObject
-  // {
-  //   constructor(pool, nav_mesh, handle)
-  //   {
-  //       this.query_ = new NavMeshQuery(nav_mesh);
-  //       this.pool_ = pool;
-  //       this.is_active_ = false;
-  //       this.handle_ = handle;
-  //       this.next_ = handle + 1;
-  //   }
-  // }
-
-  // class NavMeshQueryPool
-  // {
-  //     constructor(nav_mesh, size)
-  //     {
-  //         this.available_query_ = 0;
-  //         this.num_active_ = 0;
-  //         this.pool_size_ = size;
-  //         this.queries_ = new Array(size).fill(new NavMeshQueryObject(this, nav_mesh));
-
-  //         for (let i = 0; i < this.pool_size_; ++i)
-  //         {
-  //             this.queries_.push(new NavMeshQueryObject(this, nav_mesh, i));
-  //         }
-  //     }
-
-  //     create()
-  //     {
-  //         if (this.available_query_ >= this.pool_size_)
-  //         {
-  //             throw new Error("Overflow when creating pooled object. Increase size.");
-  //         }
-
-  //         this.num_active_ += 1;
-
-  //         const query = this.queries_[this.available_query_];
-  //         this.available_query_ = query.next_;
-  //         query.is_active_ = true;
-
-  //         return query;
-  //     }
-
-  //     destroy(query)
-  //     {
-  //         query.next_ = this.available_query_;
-  //         query.is_active_ = false;
-  //         this.available_query_ = query.handle_;
-  //         this.num_active_ -= 1;
-  //     }
-
-  //     clear()
-  //     {
-  //         this.num_active_ = 0;
-  //         this.available_query_ = 0;
-
-  //         for (let i = 0; i < this.pool_size_; ++i)
-  //         {
-  //             this.queries_[i].next_ = i + 1;
-  //             this.queries_[i].is_active_ = false;
-  //         }
-  //     }
-  // }
 
   class NavMeshWaypoint
   {
@@ -88,6 +25,10 @@ export const component_navigation = (() => {
   class NavAgentComponent extends ecs_component.Component
   {
     static CLASS_NAME = 'NavAgentComponent';
+
+    static editor_initialized = false;
+    static draw_nav_agent = false;
+    static debug_meshes = [];
 
     get NAME() {
       return NavAgentComponent.CLASS_NAME;
@@ -108,7 +49,6 @@ export const component_navigation = (() => {
       // this.speed = 0.8;
       // this.waypoint_threshold = Math.pow(0.25, 2);
 
-      this.debug_mesh_ = null;
       this.debug_path_geometry_ = null;
 
       if (env.DEBUG_MODE)
@@ -126,10 +66,16 @@ export const component_navigation = (() => {
         this.debug_path_index_ = 0;
 
         const path_material = new THREE.LineBasicMaterial( { color: 'magenta' } );
-        this.debug_path_ = new THREE.Line( this.debug_path_geometry_,  path_material );
-        this.debug_path_.frustumCulled = false;
+        let debug_path = new THREE.Line( this.debug_path_geometry_,  path_material );
+        debug_path.frustumCulled = false;
 
-        params.scene.add(this.debug_path_);
+        params.scene.add(debug_path);
+      
+        NavAgentComponent.debug_meshes.push(this.debug_mesh_);
+        NavAgentComponent.debug_meshes.push(debug_path);
+
+        this.debug_mesh_.visible = NavAgentComponent.draw_nav_agent;
+        debug_path.visible = NavAgentComponent.draw_nav_agent;
       }
     }
 
@@ -137,14 +83,22 @@ export const component_navigation = (() => {
     {
       super.on_initialized();
 
-      if (env.DEBUG_MODE)
+      if (env.DEBUG_MODE && NavAgentComponent.editor_initialized === false)
       {
         const e_singletons = this.entity.manager.get_entity("Singletons");
-      
-        let c_debug = e_singletons.get_component("DebugComponent");
+    
+        let c_editor = e_singletons.get_component("EditorComponent");
   
-        c_debug.debug_nav_agents.push(this.debug_mesh_);
-        c_debug.debug_nav_agents.push(this.debug_path_);
+        let debug_draw_page = c_editor.get_page(component_editor.eEditorPage.EP_DebugDraw);
+
+        debug_draw_page.add_binding(NavAgentComponent, 'draw_nav_agent', "NavAgent", null, (value) => {
+          for (let mesh of NavAgentComponent.debug_meshes)
+          {
+            mesh.visible = value;
+          }
+        });
+
+        NavAgentComponent.editor_initialized = true;
       }
     }
 
@@ -208,6 +162,10 @@ export const component_navigation = (() => {
   {
     static CLASS_NAME = 'NavMeshComponent';
 
+    static editor_initialized = false;
+    static draw_nav_mesh = false;
+    static debug_meshes = [];
+
     get NAME() {
       return NavMeshComponent.CLASS_NAME;
     }
@@ -219,9 +177,6 @@ export const component_navigation = (() => {
       const nav_mesh_bin = resources.ResourceManager.get_binary_data(params.nav_mesh_id);
       const import_result = importNavMesh(nav_mesh_bin);
       this.nav_mesh = import_result.navMesh;
-
-      this.debug_nav_mesh = null;
-      this.debug_nav_mesh2 = null;
 
       // NavMeshHelper
       if (env.DEBUG_MODE)
@@ -235,19 +190,26 @@ export const component_navigation = (() => {
           color: 'green',
           wireframe: true,
         });
-        this.debug_nav_mesh = new NavMeshHelper({
+        let debug_nav_mesh = new NavMeshHelper({
           navMesh: this.nav_mesh,
           navMeshMaterial: nav_mesh_mat,
         });
-        this.debug_nav_mesh2 = new NavMeshHelper({
+        let debug_nav_mesh2 = new NavMeshHelper({
           navMesh: this.nav_mesh,
           navMeshMaterial: nav_mesh_mat2,
         });
-        params.scene.add(this.debug_nav_mesh);
-        params.scene.add(this.debug_nav_mesh2);
 
         // update the helper when the navmesh changes
         // nav_mesh_debug.update();
+
+        params.scene.add(debug_nav_mesh);
+        params.scene.add(debug_nav_mesh2);
+
+        debug_nav_mesh.visible = NavMeshComponent.draw_nav_mesh;
+        debug_nav_mesh2.visible = NavMeshComponent.draw_nav_mesh;
+
+        NavMeshComponent.debug_meshes.push(debug_nav_mesh);
+        NavMeshComponent.debug_meshes.push(debug_nav_mesh2);
       }
 
       // this.nav_mesh_query_pool_ = new NavMeshQueryPool(this.nav_mesh, RC_QUERY_POOL_SIZE);
@@ -258,14 +220,22 @@ export const component_navigation = (() => {
     {
       super.on_initialized();
 
-      if (env.DEBUG_MODE)
+      if (env.DEBUG_MODE && NavMeshComponent.editor_initialized === false)
       {
         const e_singletons = this.entity.manager.get_entity("Singletons");
-      
-        let c_debug = e_singletons.get_component("DebugComponent");
+    
+        let c_editor = e_singletons.get_component("EditorComponent");
   
-        c_debug.debug_nav_meshes.push(this.debug_nav_mesh);
-        c_debug.debug_nav_meshes.push(this.debug_nav_mesh2);
+        let debug_draw_page = c_editor.get_page(component_editor.eEditorPage.EP_DebugDraw);
+
+        debug_draw_page.add_binding(NavMeshComponent, 'draw_nav_mesh', "NavMesh", null, (value) => {
+          for (let mesh of NavMeshComponent.debug_meshes)
+          {
+            mesh.visible = value;
+          }
+        });
+
+        NavMeshComponent.editor_initialized = true;
       }
     }
 

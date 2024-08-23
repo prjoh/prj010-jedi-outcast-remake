@@ -5,6 +5,7 @@ import { resources } from '../ResourceManager';
 import { ecs_component } from '../ECS/Component';
 import { env } from '../Env';
 import { assert } from '../Assert';
+import { component_editor } from './Editor';
 
 export const component_mesh = (() => {
 
@@ -19,6 +20,10 @@ export const component_mesh = (() => {
   class InstancedMeshComponent extends ecs_component.Component
   {
     static CLASS_NAME = 'InstancedMeshComponent';
+
+    static editor_initialized = false;
+    static draw_instanced = false;
+    static debug_meshes = [];
 
     get NAME() {
       return InstancedMeshComponent.CLASS_NAME;
@@ -64,6 +69,20 @@ export const component_mesh = (() => {
       this.scene_.add( this.instanced_mesh_ );
 
       setup_shadows(this.instanced_mesh_, params.cast_shadow, params.receive_shadow);
+
+      if (env.DEBUG_MODE)
+      {
+        for (let i = 0; i < this.instance_count; ++i)
+        {
+          const geometry = new THREE.SphereGeometry( this.bounding_sphere_radius, 16, 8 ); 
+          const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } ); 
+          let sphere = new THREE.Mesh( geometry, material );
+          sphere.position.copy(this.instance_positions[i]);
+          InstancedMeshComponent.debug_meshes.push(sphere);
+          sphere.visible = InstancedMeshComponent.draw_instanced;
+          this.scene_.add(sphere);
+        }
+      }
     }   
 
     get matrix_array()
@@ -75,21 +94,22 @@ export const component_mesh = (() => {
     {
       super.on_initialized();
 
-      if (env.DEBUG_MODE)
+      if (env.DEBUG_MODE && InstancedMeshComponent.editor_initialized === false)
       {
         const e_singletons = this.entity.manager.get_entity("Singletons");
-      
-        let c_debug = e_singletons.get_component("DebugComponent");
+    
+        let c_editor = e_singletons.get_component("EditorComponent");
   
-        for (let i = 0; i < this.instance_count; ++i)
-        {
-          const geometry = new THREE.SphereGeometry( this.bounding_sphere_radius, 16, 8 ); 
-          const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } ); 
-          const sphere = new THREE.Mesh( geometry, material );
-          sphere.position.copy(this.instance_positions[i]);
-          c_debug.debug_instanced_bounding_spheres.push(sphere);
-          this.scene_.add(sphere);
-        }
+        let debug_draw_page = c_editor.get_page(component_editor.eEditorPage.EP_DebugDraw);
+
+        debug_draw_page.add_binding(InstancedMeshComponent, 'draw_instanced', "Instanced", null, (value) => {
+          for (let mesh of InstancedMeshComponent.debug_meshes)
+          {
+            mesh.visible = value;
+          }
+        });
+
+        InstancedMeshComponent.editor_initialized = true;
       }
     }
 
