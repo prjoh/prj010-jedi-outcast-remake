@@ -1,3 +1,4 @@
+import { BT_FIXED_TIME_STEP } from './Config';
 import { log } from './Log';
 import { assert } from './Assert';
 import { time, Time } from './Time';
@@ -16,7 +17,7 @@ export const game = (() => {
   {
     constructor()
     {
-      this.clock_ = new time.Clock(1.0 / 60.0);
+      this.clock_ = new time.Clock(BT_FIXED_TIME_STEP);
 
       // TODO
       this.current_world_ = new game_world.World();

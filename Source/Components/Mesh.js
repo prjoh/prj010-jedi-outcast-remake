@@ -171,8 +171,8 @@ export const component_mesh = (() => {
 
       setup_shadows(this.mesh_, params.cast_shadow, params.receive_shadow);
 
-      // TODO
-      this.bone_ = null;
+      // // TODO
+      // this.bone_ = null;
     }
 
     find_child(name)
@@ -207,11 +207,11 @@ export const component_mesh = (() => {
         const kyle_tshirt_rgb_map = resources.ResourceManager.get_texture('kyle/Kyle_Clothes_Tshirt_OcclusionRoughnessMetallic', false);
 
         this.mesh_.traverse((o) => {
-          // TODO: Debug
-          if (o.name === "P1_low_Cylinder008")
-          {
-            this.bone_ = o;
-          }
+          // // TODO: Debug
+          // if (o.name === "P1_low_Cylinder008")
+          // {
+          //   this.bone_ = o;
+          // }
 
           switch(o.name)
           {

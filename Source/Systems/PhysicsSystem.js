@@ -3,6 +3,7 @@ import { component_physics } from '../Components/Physics';
 import { component_transform } from '../Components/Transform';
 import { ecs_component } from '../ECS/Component';
 import { ecs_system } from '../ECS/System';
+import { component_player_blocker } from '../Components/PlayerBlocker';
 
 
 export const system_physics = (() => {
@@ -21,8 +22,12 @@ export const system_physics = (() => {
         component_physics.KinematicCharacterController.CLASS_NAME,
         component_transform.Transform.CLASS_NAME,
       );
-      this.physics_system_tuples_box_triggers = new ecs_component.ComponentContainer(
-        component_physics.BoxTrigger.CLASS_NAME,
+      // this.physics_system_tuples_box_triggers = new ecs_component.ComponentContainer(
+      //   component_physics.BoxTrigger.CLASS_NAME,
+      // );
+      this.physics_system_tuples_player_blocker = new ecs_component.ComponentContainer(
+        component_player_blocker.PlayerBlocker.CLASS_NAME,
+        component_transform.Transform.CLASS_NAME,
       );
     }
 
@@ -33,7 +38,8 @@ export const system_physics = (() => {
     pre_update()
     {
       this.entity_manager_.update_component_container(this.physics_system_tuples_kcc);
-      this.entity_manager_.update_component_container(this.physics_system_tuples_box_triggers);
+      // this.entity_manager_.update_component_container(this.physics_system_tuples_box_triggers);
+      this.entity_manager_.update_component_container(this.physics_system_tuples_player_blocker);
       this.entity_manager_.update_component_container(this.physics_system_tuples_cylinder);
     }
 
@@ -185,6 +191,35 @@ export const system_physics = (() => {
 
         c_transform.position = trans_pos;
         c_transform.rotation = trans_rot;
+      }
+
+      for (let i = 0; i < this.physics_system_tuples_player_blocker.size; ++i)
+      {
+        const [blockers, transforms] = this.physics_system_tuples_player_blocker.component_tuples;
+
+        let c_blocker = blockers[i];
+        let c_transform = transforms[i];
+
+        let outer_trigger = c_blocker.outer_trigger_;
+        let inner_trigger = c_blocker.inner_trigger_;
+
+        const trans_pos = c_transform.position;
+        const trans_rot = c_transform.rotation;
+
+        let col_pos1 = outer_trigger.body_.getWorldTransform().getOrigin();
+        let col_rot1 = outer_trigger.body_.getWorldTransform().getRotation();
+        let col_pos2 = inner_trigger.body_.getWorldTransform().getOrigin();
+        let col_rot2 = inner_trigger.body_.getWorldTransform().getRotation();
+
+        col_pos1.setValue(trans_pos.x, trans_pos.y, trans_pos.z);
+        col_rot1.setValue(trans_rot.x, trans_rot.y, trans_rot.z, trans_rot.w);
+        col_pos2.setValue(trans_pos.x, trans_pos.y, trans_pos.z);
+        col_rot2.setValue(trans_rot.x, trans_rot.y, trans_rot.z, trans_rot.w);
+
+        outer_trigger.body_.getWorldTransform().setOrigin(col_pos1);
+        outer_trigger.body_.getWorldTransform().setRotation(col_rot1);
+        inner_trigger.body_.getWorldTransform().setOrigin(col_pos2);
+        inner_trigger.body_.getWorldTransform().setRotation(col_rot2);
       }
 
       const [kccs, transforms] = this.physics_system_tuples_kcc.component_tuples;

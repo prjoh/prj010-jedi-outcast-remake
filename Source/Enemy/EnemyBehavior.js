@@ -112,6 +112,12 @@ class EnemyBehavior
     return c_movement.has_reached_turn_target();
   }
 
+  // shoot()
+  // {
+  //   let c_blaster = this.entity_.get_component("BlasterSpawner");
+  //   c_blaster.spawn();
+  // }
+
   tick(delta_time_s)
   {
     // TODO: Check sensor states and store results in EnemyBehavior (e.g. has_detected_player, has_heard_noise, has_heard_friend)

@@ -1,3 +1,4 @@
+import { component_player_state } from '../Components/PlayerState';
 import { ecs_system } from '../ECS/System';
 
 
@@ -19,11 +20,14 @@ export const system_player_movement = (() => {
     fixed_update(fixed_delta_time_s)
     {
       const e_player = this.get_entity("Player");
+      const e_player_mesh = this.get_entity("PlayerMesh");
 
       let c_commander = e_player.get_component("PlayerCommander");
       let c_controls = e_player.get_component("CharacterControls");
       let c_kcc = e_player.get_component("KinematicCharacterController");
       let c_transform = e_player.get_component("Transform");
+      const c_state = e_player_mesh.get_component("PlayerState");
+      const is_blocking = c_state.get_player_action(component_player_state.ePlayerAction.PS_Blocking);
 
       let controller = c_kcc.controller_;
 
@@ -79,7 +83,8 @@ export const system_player_movement = (() => {
             right.z * direction_run.x() + forward.z * direction_run.z()
           );
 
-          const acceleration_run = c_controls.acceleration_run;
+          const blocking_modifier = is_blocking ? 0.1 : 1.0;
+          const acceleration_run = c_controls.acceleration_run * blocking_modifier;
 
           velocity_run.setValue(
             velocity_run.x() + direction_run.x() * acceleration_run * fixed_delta_time_s, 

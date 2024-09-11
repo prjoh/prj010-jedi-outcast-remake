@@ -6,27 +6,27 @@ export const utils = (() => {
 
   class TimedFlag
   {
-    constructor(initial_value, reset_value, time_s)
+    constructor(time_s)
     {
-      this.value_ = initial_value;
-      this.reset_value_ = reset_value;
       this.time_s_ = time_s;
       this.creation_time_ = Time.elapsed_time;
+      this.timeout_ = false;
     }
 
-    get value()
+    is_valid()
     {
-      return this.value_;
+      return this.timeout_ === false;
     }
 
-    update()
+    tick()
     {
-      const elapsed_time = Time.elapsed_time;
+      this.timeout_ = (Time.elapsed_time - this.creation_time_) >= this.time_s_;
+    }
 
-      if ((elapsed_time - this.creation_time_) >= this.time_s_)
-      {
-        this.value_ = this.reset_value_;
-      }
+    reset()
+    {
+      this.timeout_ = false;
+      this.creation_time_ = Time.elapsed_time;
     }
   };
 

@@ -19,7 +19,7 @@ import { system_animation } from '../Systems/Animation';
 import { system_enemy_behavior } from '../Systems/EnemyBehaviorSystem';
 import { system_enemy_movement } from '../Systems/EnemyMovementSystem';
 import { system_interact } from '../Systems/InteractionSystem';
-import { system_fighting } from '../Systems/FightingSystem';
+import { system_player_behavior } from '../Systems/PlayerBehaviorSystem';
 
 import { component_renderer } from '../Components/RenderState';
 import { component_camera } from '../Components/Camera';
@@ -69,7 +69,7 @@ export const game_world = (() => {
       resources.ResourceManager.load_skinned_model_gltf('stormtrooper_anim2');
       resources.ResourceManager.load_texture('Grid');
       resources.ResourceManager.load_texture('Grid_N');
-      resources.ResourceManager.load_binary_file('level_01_wb_nav');
+      resources.ResourceManager.load_binary_file('NavMesh/level_01_wb_nav');
 
       resources.ResourceManager.load_texture('kyle/Kyle_Clothes_Belt_OcclusionRoughnessMetallic', false);
       resources.ResourceManager.load_texture('kyle/Kyle_Clothes_Boots_OcclusionRoughnessMetallic', false);
@@ -203,12 +203,32 @@ export const game_world = (() => {
       });
       e_level.add_component(component_navigation.NavMeshComponent, {
         scene: this.scene_,
-        nav_mesh_id: 'level_01_wb_nav',
+        nav_mesh_id: 'NavMesh/level_01_wb_nav',
         mesh: c_level_mesh.mesh_
       });
       let i = 0;
       c_level_mesh.mesh_.traverse((c) => {
-        if (c.name.startsWith("Col_"))
+        if (c.name.startsWith("ColConcave_"))
+        {
+          c.visible = false;
+          let e_level_col = this.entity_manager_.create_entity(`Level_Collider${i}`, e_level);
+          let c_level_col_transform = e_level.get_component("Transform");
+          let c_level_collider = e_level_col.add_component(component_physics.ConcaveMeshCollider, {
+            transform: c_level_col_transform,
+            physics_state: e_singletons.get_component("PhysicsState"),
+            body_type: component_physics.eBodyType.BT_Static,
+            mesh: c,
+            mass: 0,
+            traverse: false,
+            collision_group: eCollisionGroup.CG_Default,
+            collision_mask: eCollisionGroup.CG_All,
+            is_contact_listener: false,
+          });
+          c_level_collider.set_friction(0.8);
+          c_level_collider.set_rolling_friction(0.4);
+          i += 1;
+        }
+        else if (c.name.startsWith("Col_"))
         {
           c.visible = false;
           let e_level_col = this.entity_manager_.create_entity(`Level_Collider${i}`, e_level);
@@ -388,8 +408,8 @@ export const game_world = (() => {
         : {
           path: [
             new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(0.0, 0.0, -35.0)),
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(8.0, 0.0, -35.0)),
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(8.0, 0.0, 0.0)),
+            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(14.0, 0.0, -35.0)),
+            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(14.0, 0.0, 0.0)),
             new THREE.Vector3().copy(enemy_position),
           ],
         };
@@ -449,11 +469,6 @@ export const game_world = (() => {
         ); 
       }
 
-      /*
-       * TODO:
-       *  - 20_FightIdle
-       *  - 21_ShootStanding
-       */
       {
         let enemy_position = new THREE.Vector3(-2.0, 0.0, -5.0);
         let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
@@ -557,13 +572,13 @@ export const game_world = (() => {
        * Setup systems
        */
       this.entity_manager_.register_system(system_input.InputSystem);
+      this.entity_manager_.register_system(system_player_behavior.PlayerBehaviorSystem);
       this.entity_manager_.register_system(system_player_movement.PlayerMovementSystem);
       this.entity_manager_.register_system(system_enemy_behavior.EnemyBehaviorSystem);
       this.entity_manager_.register_system(system_enemy_movement.EnemyMovementSystem);
       this.entity_manager_.register_system(system_physics.PhysicsSystem);
       this.entity_manager_.register_system(system_camera.CameraController);
       this.entity_manager_.register_system(system_interact.InteractionSystem);
-      this.entity_manager_.register_system(system_fighting.FightingSystem);
       this.entity_manager_.register_system(system_animation.AnimationSystem);
       this.entity_manager_.register_system(system_renderer.RenderSystem);
 

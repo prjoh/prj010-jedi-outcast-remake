@@ -18,7 +18,7 @@ export const component_lightsaber_glow = (() => {
 
       this.scene_ = params.scene;
 
-      const intensity = 1.2;
+      const intensity = 1.7;
       const distance = 0.0;
       const decay = 1.5;
 
@@ -29,14 +29,27 @@ export const component_lightsaber_glow = (() => {
         decay,
       );
 
-      // point_light.add(new THREE.AxesHelper(10.0));
-
       this.point_light_ = point_light;
-      this.point_light_rotation_ = new THREE.Quaternion();
-      this.point_light_direction_ = new THREE.Vector3();
+      this.direction_buffer_ = new THREE.Vector3();
       this.lightsaber_anchor_ = null;
 
       this.scene_.add(point_light);
+
+      this.position_buffer_ = new THREE.Vector3();
+      this.position_buffer2_ = new THREE.Vector3();
+      this.quaternion_buffer_ = new THREE.Quaternion();
+
+      // const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 ); 
+      // const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); 
+      // this.cube = new THREE.Mesh( geometry, material );
+      // this.cube2 = new THREE.Mesh( geometry, material );
+      // this.scene_.add(this.cube);
+      // this.scene_.add(this.cube2);
+
+      const geometry2 = new THREE.CapsuleGeometry( 0.01, 1, 1, 3 ); 
+      const material2 = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); 
+      this.capsule = new THREE.Mesh( geometry2, material2 );
+      this.scene_.add(this.capsule);
     }
 
     on_initialized()
@@ -57,13 +70,13 @@ export const component_lightsaber_glow = (() => {
     update_point_light()
     {
       this.lightsaber_anchor_.getWorldPosition(this.point_light_.position);
-      this.lightsaber_anchor_.getWorldQuaternion(this.point_light_rotation_);
+      this.lightsaber_anchor_.getWorldQuaternion(this.point_light_.quaternion);
 
-      this.point_light_direction_.set(0.0, 0.0, 1.0);
-      this.point_light_direction_.applyQuaternion(this.point_light_rotation_);
-      this.point_light_direction_.normalize();
+      this.direction_buffer_.set(0.0, 0.0, 1.0);
+      this.direction_buffer_.applyQuaternion(this.point_light_.quaternion);
+      this.direction_buffer_.normalize();
 
-      this.point_light_.position.add(this.point_light_direction_.multiplyScalar(-0.2));
+      this.point_light_.position.add(this.direction_buffer_.multiplyScalar(-0.2));
     }
   };
 

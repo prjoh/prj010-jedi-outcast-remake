@@ -186,7 +186,7 @@ export const resources = (() => {
         return;
       }
 
-      const path = `${BASE_PATH}${resource_key}.glb`;
+      const path = `${BASE_PATH}Models/${resource_key}.glb`;
 
       // Instantiate gltf loader
       const loader = new GLTFLoader( this.loading_manager_ );
@@ -216,7 +216,7 @@ export const resources = (() => {
         return;
       }
 
-      const path = `${BASE_PATH}${resource_key}.glb`;
+      const path = `${BASE_PATH}Models/${resource_key}.glb`;
 
       // // Instantiate gltf loader
       // const loader = new GLTFLoader();

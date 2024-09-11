@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 
+import { ANIM_FPS } from '../Config';
 import { fsm } from '../FSM';
 import { ecs_component } from '../ECS/Component';
+import { assert } from '../Assert';
 
 
 export const component_animation = (() => {
@@ -51,6 +53,10 @@ export const component_animation = (() => {
       this.animation_parameters_ = params.parameters;
       this.state_transitions_ = params.state_transitions;
       this.initialized_ = false;
+
+      // animation_name -> [{ event_id: String, keyframes: [Number], callback: Function }, ...]
+      this.keyframe_event_handlers_ = new Map();
+      this.current_keyframe_index_ = -1;
 
       for (const [ parameter, initial_value ] of this.animation_parameters_)
       {
@@ -138,6 +144,7 @@ export const component_animation = (() => {
         loop: true,
         apply_root_translation: false,
         apply_root_rotation: false,
+        keyframe_event_handlers: null,
       }
     }
 
@@ -166,6 +173,15 @@ export const component_animation = (() => {
       {
         const state = this.animation_fsm_.create_state(animation.name);
         states.push(state);
+
+        const ac = this.get_animation_config(animation.name);
+        if (ac.keyframe_event_handlers)
+        {
+          for (const keh of ac.keyframe_event_handlers)
+          {
+            this.register_keyframe_event_handler(animation.name, keh.event_id, keh.keyframes, keh.callback);
+          }
+        }
       }
 
       for (const state of states)
@@ -191,9 +207,44 @@ export const component_animation = (() => {
       this.initialized_ = true;
     }
 
+    register_keyframe_event_handler(animation_name, event_id, keyframes, callback)
+    {
+      let event_handler_array = null;
+      if (this.keyframe_event_handlers_.has(animation_name))
+      {
+        event_handler_array = this.keyframe_event_handlers_.get(animation_name);
+      }
+      else
+      {
+        event_handler_array = [];
+        this.keyframe_event_handlers_.set(animation_name, event_handler_array);
+      }
+
+      assert(this.keyframe_event_handlers_.has(animation_name));
+      assert(event_handler_array.find(item => item.event_id === event_id) === undefined);
+
+      event_handler_array.push({
+        event_id: event_id,
+        keyframes: keyframes,
+        callback: callback,
+      });
+    }
+
+    unregister_keyframe_event_handler(animation_name, event_id)
+    {
+      assert(this.keyframe_event_handlers_.has(animation_name));
+
+      let event_handler_array = this.keyframe_event_handlers_.get(animation_name);
+      const updated_event_handler_array = event_handler_array.filter(item => item.event_id !== event_id);
+      this.keyframe_event_handlers_.set(animation_name, updated_event_handler_array);
+    }
+
     play_animation(animation_name)
     {
       this.last_action_ = this.current_action_;
+
+      const clip = THREE.AnimationClip.findByName( this.animation_clips_, animation_name );
+      this.current_action_ = this.mixer_.clipAction( clip );
 
       if ( this.last_action_ !== null )
       {
@@ -203,8 +254,6 @@ export const component_animation = (() => {
       const ac = this.get_animation_config(animation_name);
       const is_looping = ac.loop;
       
-      const clip = THREE.AnimationClip.findByName( this.animation_clips_, animation_name );
-      this.current_action_ = this.mixer_.clipAction( clip );
       this.current_action_.loop = is_looping ? THREE.LoopRepeat : THREE.LoopOnce;
       this.current_action_.clampWhenFinished = is_looping ? false : true;
       this.current_action_.reset()
@@ -212,6 +261,42 @@ export const component_animation = (() => {
                           .setEffectiveWeight(1)
                           .fadeIn(this.current_fade_duration_)
                           .play();
+
+      this.current_keyframe_index_ = -1;
+    }
+
+    update_keyframe_event_handlers()
+    {
+      if (this.current_action_.isRunning() === false)
+      {
+        return;
+      }
+
+      const animation_name = this.current_action_.getClip().name;
+
+      if (this.keyframe_event_handlers_.has(animation_name) === false)
+      {
+        return;
+      }
+
+      const keyframe_index = Math.floor(this.current_action_.time * ANIM_FPS);
+
+      if (keyframe_index === this.current_keyframe_index_)
+      {
+        return;
+      }
+
+      this.current_keyframe_index_ = keyframe_index;
+
+      const keyframe_event_handlers = this.keyframe_event_handlers_.get(animation_name);
+
+      for (const keh of keyframe_event_handlers)
+      {
+        if (keh.keyframes.includes(this.current_keyframe_index_))
+        {
+          keh.callback(this.entity_);
+        }
+      }
     }
   };
 

@@ -18,7 +18,7 @@ function assert(condition, message) {
       const assertLocation = stackLines[2].trim();
 
       // Combine the custom message with the location info
-      const fullMessage = `${message || "Assertion failed"} at ${assertLocation}`;
+      const fullMessage = `${message || "Assertion failed"} ${assertLocation}`;
 
       // Throw an error with the full message
       throw new Error(fullMessage);

@@ -77,26 +77,26 @@ export const system_renderer = (() => {
         // {
         //   c_mesh.mixer_.update(delta_time_s);
         // }
-        if (c_mesh.bone_)
-        {
-          let pos = new THREE.Vector3();
-          pos.copy(c_mesh.bone_.position);
-          pos.z -= 18.0;
-          pos.applyMatrix4(c_mesh.bone_.matrixWorld);
+        // if (c_mesh.bone_)
+        // {
+        //   let pos = new THREE.Vector3();
+        //   pos.copy(c_mesh.bone_.position);
+        //   pos.z -= 18.0;
+        //   pos.applyMatrix4(c_mesh.bone_.matrixWorld);
           
-          let rot = new THREE.Quaternion();
-          // c_mesh.bone_.getWorldPosition(pos);
-          c_mesh.bone_.getWorldQuaternion(rot);
+        //   let rot = new THREE.Quaternion();
+        //   // c_mesh.bone_.getWorldPosition(pos);
+        //   c_mesh.bone_.getWorldQuaternion(rot);
 
-          const e_mesh_collider = this.get_entity("PlayerSwordTrigger");
-          let c_box_collider = e_mesh_collider.get_component("BoxTrigger");
-          let col_pos = c_box_collider.body_.getWorldTransform().getOrigin();
-          let col_rot = c_box_collider.body_.getWorldTransform().getRotation();
-          col_pos.setValue(pos.x, pos.y, pos.z);
-          col_rot.setValue(rot.x, rot.y, rot.z, rot.w);
-          c_box_collider.body_.getWorldTransform().setOrigin(col_pos);
-          c_box_collider.body_.getWorldTransform().setRotation(col_rot);
-        }
+        //   const e_mesh_collider = this.get_entity("PlayerSwordTrigger");
+        //   let c_box_collider = e_mesh_collider.get_component("BoxTrigger");
+        //   let col_pos = c_box_collider.body_.getWorldTransform().getOrigin();
+        //   let col_rot = c_box_collider.body_.getWorldTransform().getRotation();
+        //   col_pos.setValue(pos.x, pos.y, pos.z);
+        //   col_rot.setValue(rot.x, rot.y, rot.z, rot.w);
+        //   c_box_collider.body_.getWorldTransform().setOrigin(col_pos);
+        //   c_box_collider.body_.getWorldTransform().setRotation(col_rot);
+        // }
       }
 
       const e_singletons = this.get_entity("Singletons");

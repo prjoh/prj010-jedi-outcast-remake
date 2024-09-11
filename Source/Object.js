@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { assert } from './Assert';
 
 
@@ -8,6 +9,11 @@ export const object = (() => {
   {
     /** @abstract */
     get NAME() {}
+
+    constructor()
+    {
+      this.uuid = THREE.MathUtils.generateUUID();
+    }
   };
 
   class ObjectMap

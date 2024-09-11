@@ -400,6 +400,94 @@ export const component_physics = (() => {
     }
   };
 
+  class ConcaveMeshCollider extends Collider
+  {
+    static CLASS_NAME = 'ConcaveMeshCollider';
+
+    get NAME() {
+      return ConcaveMeshCollider.CLASS_NAME;
+    }
+
+    constructor(params)
+    {
+      super(params);
+
+      const V0 = new THREE.Vector3();
+      const V1 = new THREE.Vector3();
+      const V2 = new THREE.Vector3();
+
+      const A0 = new Ammo.btVector3();
+      const A1 = new Ammo.btVector3();
+      const A2 = new Ammo.btVector3();
+
+      this.ammo_mesh_ = new Ammo.btTriangleMesh(true, true);
+
+      const extract_geometry = (geometry, matrix_world) => {
+        const p = geometry.attributes.position.array;
+        for (let i = 0; i < geometry.index.count; i+=3) {
+          const i0 = geometry.index.array[i] * 3;
+          const i1 = geometry.index.array[i + 1] * 3;
+          const i2 = geometry.index.array[i + 2] * 3;
+
+          V0.fromArray(p, i0).applyMatrix4(matrix_world);
+          V1.fromArray(p, i1).applyMatrix4(matrix_world);
+          V2.fromArray(p, i2).applyMatrix4(matrix_world);
+
+          A0.setX(V0.x);
+          A0.setY(V0.y);
+          A0.setZ(V0.z);
+          A1.setX(V1.x);
+          A1.setY(V1.y);
+          A1.setZ(V1.z);
+          A2.setX(V2.x);
+          A2.setY(V2.y);
+          A2.setZ(V2.z);
+
+          this.ammo_mesh_.addTriangle(A0, A1, A2, false);
+        }
+      };
+
+      if (params.traverse)
+      {
+        params.mesh.traverse(c => {
+          c.updateMatrixWorld(true);
+          if (c.geometry) {
+            extract_geometry(c.geometry, c.matrixWorld);
+          }
+        });
+      }
+      else
+      {
+        const geometry = params.mesh.geometry;
+        params.mesh.updateMatrixWorld(true);
+        extract_geometry(geometry, params.mesh.matrixWorld);
+      }
+
+      this.shape_ = new Ammo.btBvhTriangleMeshShape(this.ammo_mesh_, true, true);
+
+      // Set the collision margin
+      this.shape_.setMargin(BT_COLLISION_MARGIN);
+
+      /*
+       * Inertia is the resistance of any physical object to a change its state of motion, 
+       * or the tendency of an object to resist any change in its motion.
+       * The products of inertia are zero when the body is symmetrical about the axes of rotation, 
+       * such as for a rectangular box or cylinder rotating on their symmetry axis.
+       */
+      this.inertia_ = new Ammo.btVector3(0, 0, 0);
+      this.shape_.calculateLocalInertia(params.mass, this.inertia_);
+
+      this.info_ = new Ammo.btRigidBodyConstructionInfo(
+        params.mass, 
+        this.motion_state_, 
+        this.shape_, 
+        this.inertia_);
+      this.create_body(this.info_, params.body_type);
+
+      params.physics_state.add_collider(this, params.collision_group, params.collision_mask);
+    }
+  };
+
   class CylinderCollider extends Collider
   {
     static CLASS_NAME = 'CylinderCollider';
@@ -512,6 +600,31 @@ export const component_physics = (() => {
       let bt_size = new Ammo.btVector3(params.size.x * 0.5, params.size.y * 0.5, params.size.z * 0.5);
 
       const shape = new Ammo.btBoxShape(bt_size);
+      shape.setMargin(BT_COLLISION_MARGIN);
+
+      this.set_shape(shape);
+
+      Ammo.destroy(bt_size);
+
+      params.physics_state.add_trigger(this, params.collision_group, params.collision_mask);
+    }
+  };
+
+  class CylinderTrigger extends Trigger
+  {
+    static CLASS_NAME = 'CylinderTrigger';
+
+    get NAME() {
+      return CylinderTrigger.CLASS_NAME;
+    }
+
+    constructor(params)
+    {
+      super(params);
+
+      let bt_size = new Ammo.btVector3(params.radius, params.height, params.radius);
+
+      const shape = new Ammo.btCylinderShape(bt_size);
       shape.setMargin(BT_COLLISION_MARGIN);
 
       this.set_shape(shape);
@@ -1003,12 +1116,14 @@ export const component_physics = (() => {
       // paircache.setInternalGhostPairCallback(new Ammo.btGhostPairCallback());
     }
 
-    ray_test(from_world, to_world)
+    ray_test(from_world, to_world, filter_group = eCollisionGroup.CG_All, filter_mask = eCollisionGroup.CG_All)
     {
       this.ray_from_.setValue(from_world.x, from_world.y, from_world.z);
       this.ray_to_.setValue(to_world.x, to_world.y, to_world.z);
 
-      const ray_cb = new Ammo.AllHitsRayResultCallback(this.ray_from_, this.ray_to_);
+      let ray_cb = new Ammo.AllHitsRayResultCallback(this.ray_from_, this.ray_to_);
+      ray_cb.set_m_collisionFilterGroup(filter_group);
+      ray_cb.set_m_collisionFilterMask(filter_mask);
 
       this.physics_world_.rayTest(this.ray_from_, this.ray_to_, ray_cb);
 
@@ -1020,6 +1135,17 @@ export const component_physics = (() => {
         const points = ray_cb.get_m_hitPointWorld();
         const normals = ray_cb.get_m_hitNormalWorld();
         const hits = collision_objects.size();
+        const start = {
+          x: this.ray_from_.x(),
+          y: this.ray_from_.y(),
+          z: this.ray_from_.z(),
+        };
+        const distance = (p1, p2) => {
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const dz = p2.z - p1.z;
+          return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        };
 
         for (let i = 0; i < hits; ++i)
         {
@@ -1033,15 +1159,16 @@ export const component_physics = (() => {
           const n = { x: normal.x(), y: normal.y(), z: normal.z() };
 
           hit_data.push({
-            name: ud0.name,
             position: p,
             normal: n,
-            // distance: p.distanceTo(start),
+            component: ud0,
+            collision_object: obj,
+            distance: distance(start, p),
           });
         }
       }
 
-      // hit_data.sort((a, b) => { return a.distance - b.distance});
+      hit_data.sort((a, b) => { return a.distance - b.distance});
 
       Ammo.destroy(ray_cb);
 
@@ -1103,7 +1230,9 @@ export const component_physics = (() => {
     CylinderCollider: CylinderCollider,
     KinematicCharacterController: KinematicCharacterController,
     ConvexMeshCollider: ConvexMeshCollider,
+    ConcaveMeshCollider: ConcaveMeshCollider,
     BoxTrigger: BoxTrigger,
+    CylinderTrigger: CylinderTrigger,
     Trigger: Trigger,
   };
 
