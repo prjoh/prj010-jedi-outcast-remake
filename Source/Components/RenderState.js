@@ -4,21 +4,8 @@ import * as PPROC from 'postprocessing';
 import { N8AOPostPass } from 'n8ao'
 
 import { ecs_component } from '../ECS/Component';
-// import { LuminosityHighPassShader } from '../Shaders/LuminosityShader.js';
 import { env } from '../Env';
 import { component_editor } from './Editor';
-import { resources } from '../ResourceManager';
-// import * as config from '../Config';
-
-// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-// import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-// import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
-// import { GammaCorrectionShader } from 'three/addons/shaders/GammaCorrectionShader.js';
-// import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
-// import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-
 
 export const component_renderer = (() => {
 
@@ -122,7 +109,7 @@ export const component_renderer = (() => {
         averageLuminance: 0.01,
         adaptationRate: 1.0
       });
-      this.renderer.toneMappingExposure = 2.0;
+      this.renderer.toneMappingExposure = 1.55;
   
       // SMAA
       this.smaa_effect = new PPROC.SMAAEffect({
@@ -161,6 +148,34 @@ export const component_renderer = (() => {
         const canvas_parent = document.getElementById('scene');
         canvas_parent.appendChild(this.stats.dom);
       }
+    }
+
+    destroy()
+    {
+      if (env.DEBUG_MODE)
+      {
+        this.stats.dom.remove();
+      }
+
+      const canvas = this.renderer.domElement;
+      const context = canvas.getContext('webgl2');
+      context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT);
+      this.renderer.domElement.remove();
+
+      this.bloom_effect.dispose();
+      this.tone_mapping_effect.dispose();
+      this.smaa_effect.dispose();
+
+      this.opaque_pass.dispose();
+      this.smaa_pass.dispose();
+      this.ao_pass.dispose();
+      this.bloom_pass.dispose();
+      this.tone_mapping_pass.dispose();
+
+      this.composer.dispose();
+      this.renderer.dispose();
+
+      super.destroy();
     }
 
     on_initialized()

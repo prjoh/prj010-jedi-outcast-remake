@@ -46,10 +46,17 @@ export const component_lightsaber_glow = (() => {
       // this.scene_.add(this.cube);
       // this.scene_.add(this.cube2);
 
-      const geometry2 = new THREE.CapsuleGeometry( 0.01, 1, 1, 3 ); 
-      const material2 = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); 
-      this.capsule = new THREE.Mesh( geometry2, material2 );
-      this.scene_.add(this.capsule);
+      // const geometry2 = new THREE.CapsuleGeometry( 0.01, 1, 1, 3 ); 
+      // const material2 = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); 
+      // this.capsule = new THREE.Mesh( geometry2, material2 );
+      // this.scene_.add(this.capsule);
+    }
+
+    destroy()
+    {
+      this.point_light_.dispose();
+
+      super.destroy();
     }
 
     on_initialized()

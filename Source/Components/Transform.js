@@ -15,6 +15,8 @@ export const component_transform = (() => {
   const buffer_v3 = new THREE.Vector3();
   const buffer_quat1 = new THREE.Quaternion();
   const buffer_quat2 = new THREE.Quaternion();
+  const buffer_quat3 = new THREE.Quaternion();
+  const buffer_quat4 = new THREE.Quaternion();
   const buffer_m = new THREE.Matrix4();
 
   class Transform extends ecs_component.Component
@@ -200,67 +202,101 @@ export const component_transform = (() => {
       return this.right_.normalize();
     }
 
-    // https://discussions.unity.com/t/what-is-the-source-code-of-quaternion-lookrotation/72474
-    look_at(target)
+    get root()
     {
-      let forward = buffer_v1;
-      let right = buffer_v2;
-      let up = buffer_v3;
-      let up_world = y_axis;
-      let quaternion = this.local_rotation;
-
-      forward.copy(target).sub(this.local_position).normalize();
-
-      right.crossVectors(up_world, forward);
-      right.normalize();
-
-      up.crossVectors(forward, right);
-
-      var m00 = right.x;
-      var m01 = right.y;
-      var m02 = right.z;
-      var m10 = up.x;
-      var m11 = up.y;
-      var m12 = up.z;
-      var m20 = forward.x;
-      var m21 = forward.y;
-      var m22 = forward.z;
-
-      const num8 = (m00 + m11) + m22;
-
-      let _x, _y, _z, _w;
-
-      if (num8 > 0) {
-          let num = Math.sqrt(num8 + 1);
-          _w = num * 0.5;
-          num = 0.5 / num;
-          _x = (m12 - m21) * num;
-          _y = (m20 - m02) * num;
-          _z = (m01 - m10) * num;
-      } else if ((m00 >= m11) && (m00 >= m22)) {
-          var num7 = Math.sqrt(((1 + m00) - m11) - m22);
-          var num4 = 0.5 / num7;
-          _x = 0.5 * num7;
-          _y = (m01 + m10) * num4;
-          _z = (m02 + m20) * num4;
-          _w = (m12 - m21) * num4;
-      } else if (m11 > m22) {
-          var num6 = Math.sqrt(((1 + m11) - m00) - m22);
-          var num3 = 0.5 / num6;
-          _x = (m10 + m01) * num3;
-          _y = 0.5 * num6;
-          _z = (m21 + m12) * num3;
-          _w = (m20 - m02) * num3;
-      } else {
-          var num5 = Math.sqrt(((1 + m22) - m00) - m11);
-          var num2 = 0.5 / num5;
-          _x = (m20 + m02) * num2;
-          _y = (m21 + m12) * num2;
-          _z = 0.5 * num5;
-          _w = (m01 - m10) * num2;
+      if (this.parent_ !== null)
+      {
+        return this.parent_.root;
       }
 
-      quaternion.set(_x, _y, _z, _w);
+      return this;
+    }
+
+    // https://discussions.unity.com/t/what-is-the-source-code-of-quaternion-lookrotation/72474
+    // look_at(target)
+    // {
+    //   let forward = buffer_v1;
+    //   let right = buffer_v2;
+    //   let up = buffer_v3;
+    //   let up_world = y_axis;
+    //   let quaternion = this.local_rotation;
+
+    //   forward.copy(target).sub(this.local_position).normalize();
+
+    //   right.crossVectors(up_world, forward);
+    //   right.normalize();
+
+    //   up.crossVectors(forward, right);
+
+    //   var m00 = right.x;
+    //   var m01 = right.y;
+    //   var m02 = right.z;
+    //   var m10 = up.x;
+    //   var m11 = up.y;
+    //   var m12 = up.z;
+    //   var m20 = forward.x;
+    //   var m21 = forward.y;
+    //   var m22 = forward.z;
+
+    //   const num8 = (m00 + m11) + m22;
+
+    //   let _x, _y, _z, _w;
+
+    //   if (num8 > 0) {
+    //       let num = Math.sqrt(num8 + 1);
+    //       _w = num * 0.5;
+    //       num = 0.5 / num;
+    //       _x = (m12 - m21) * num;
+    //       _y = (m20 - m02) * num;
+    //       _z = (m01 - m10) * num;
+    //   } else if ((m00 >= m11) && (m00 >= m22)) {
+    //       var num7 = Math.sqrt(((1 + m00) - m11) - m22);
+    //       var num4 = 0.5 / num7;
+    //       _x = 0.5 * num7;
+    //       _y = (m01 + m10) * num4;
+    //       _z = (m02 + m20) * num4;
+    //       _w = (m12 - m21) * num4;
+    //   } else if (m11 > m22) {
+    //       var num6 = Math.sqrt(((1 + m11) - m00) - m22);
+    //       var num3 = 0.5 / num6;
+    //       _x = (m10 + m01) * num3;
+    //       _y = 0.5 * num6;
+    //       _z = (m21 + m12) * num3;
+    //       _w = (m20 - m02) * num3;
+    //   } else {
+    //       var num5 = Math.sqrt(((1 + m22) - m00) - m11);
+    //       var num2 = 0.5 / num5;
+    //       _x = (m20 + m02) * num2;
+    //       _y = (m21 + m12) * num2;
+    //       _z = 0.5 * num5;
+    //       _w = (m01 - m10) * num2;
+    //   }
+
+    //   quaternion.set(_x, _y, _z, _w);
+    // }
+
+    look_at(target)
+    {
+      let m = buffer_m;
+      let q = buffer_quat3;
+
+      m.lookAt(target, this.position, y_axis);
+      q.setFromRotationMatrix(m);
+
+      this.rotation = q;
+
+      if (this.parent_ !== null)
+      {
+        let q2 = buffer_quat4;
+
+        this.parent_.update_world_matrix(true, false);
+        m.extractRotation( this.parent_.world_matrix );
+        q.setFromRotationMatrix(m);
+
+        q2.copy(this.rotation);
+        q2.premultiply(q.invert());
+        this.rotation = q2;
+      }
     }
 
     translate_on_axis(axis, distance)
@@ -295,6 +331,11 @@ export const component_transform = (() => {
       buffer_quat1.setFromAxisAngle( axis, angle );
   
       this.local_rotation.multiply( buffer_quat1 );
+    }
+
+    set_axis_rotation( axis, angle )
+    {
+      this.local_rotation.setFromAxisAngle( axis, angle );
     }
 
     rotate_x( angle )

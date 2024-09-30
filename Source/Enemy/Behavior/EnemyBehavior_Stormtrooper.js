@@ -6,7 +6,7 @@ class EnemyBehavior_Stormtrooper01 extends EnemyBehavior
 {
   constructor(entity, params)
   {
-    super(eBehaviorID.BID_Stormtrooper01, entity);
+    super(eBehaviorID.BID_Stormtrooper01, entity, params);
 
     const animation_param_id = params.animation_param_id;
 
@@ -18,7 +18,7 @@ class EnemyBehavior_Stormtrooper02 extends EnemyBehavior
 {
   constructor(entity, params)
   {
-    super(eBehaviorID.BID_Stormtrooper02, entity);
+    super(eBehaviorID.BID_Stormtrooper02, entity, params);
 
     const path = params.path;
 

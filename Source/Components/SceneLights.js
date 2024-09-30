@@ -51,7 +51,7 @@ export const component_lights = (() => {
 
       this.directional_light_position = new THREE.Vector3(-15, 25, 15);
 
-      this.directional_light = new THREE.DirectionalLight( 0xffe2e2, 0.4);
+      this.directional_light = new THREE.DirectionalLight( 0xffe2e2, 0.15);
       this.directional_light.position.copy(this.directional_light_position);
       this.directional_light.target = params.player;
 
@@ -69,48 +69,60 @@ export const component_lights = (() => {
 
       this.scene_.add( this.directional_light );
 
+      //////////////////
+      // Point Lights //
+      //////////////////
+
+      this.point_light1 = new THREE.PointLight( 0xffffff, 1.0, 2.5, 1.0 );
+      this.point_light1.position.set( -13.3, 2.0, 12.0 );
+      this.scene_.add( this.point_light1 );
+      
+      this.point_light2 = new THREE.PointLight( 0xffffff, 1.25, 6.0, 1.0 );
+      this.point_light2.position.set( -29.5, 2.0, -14.0 );
+      this.scene_.add( this.point_light2 );
+
       /////////////////
       // Spot Lights //
       /////////////////
 
-      const spot_light = new THREE.SpotLight(0xffffff, 25.0, 0, Math.PI/4, 0.2);
-      spot_light.position.set(2.85, 0.2, -11.15);
-      spot_light.target.position.set(-8, 2.5, -25);
+      this.spot_light = new THREE.SpotLight(0xffffff, 25.0, 0, Math.PI/4, 0.2);
+      this.spot_light.position.set(2.85, 0.2, -11.15);
+      this.spot_light.target.position.set(-8, 2.5, -25);
 
       //Set up shadow properties for the light
-      spot_light.castShadow = true;
-      spot_light.shadow.bias = -0.02;
-      spot_light.shadow.mapSize.width = 512;
-      spot_light.shadow.mapSize.height = 512;
-      spot_light.shadow.camera.near = 0.2;
-      spot_light.shadow.camera.far = 10.0;
+      this.spot_light.castShadow = true;
+      this.spot_light.shadow.bias = -0.02;
+      this.spot_light.shadow.mapSize.width = 512;
+      this.spot_light.shadow.mapSize.height = 512;
+      this.spot_light.shadow.camera.near = 0.2;
+      this.spot_light.shadow.camera.far = 10.0;
 
-      const spot_light2 = new THREE.SpotLight(0xffffff, 25.0, 0, Math.PI/4, 0.2);
-      spot_light2.position.set(-18.85, 0.2, -11.15);
-      spot_light2.target.position.set(-8, 2.5, -25);
+      this.spot_light2 = new THREE.SpotLight(0xffffff, 25.0, 0, Math.PI/4, 0.2);
+      this.spot_light2.position.set(-18.85, 0.2, -11.15);
+      this.spot_light2.target.position.set(-8, 2.5, -25);
 
       //Set up shadow properties for the light
-      spot_light2.castShadow = true;
-      spot_light2.shadow.bias = -0.02;
-      spot_light2.shadow.mapSize.width = 512;
-      spot_light2.shadow.mapSize.height = 512;
-      spot_light2.shadow.camera.near = 0.2;
-      spot_light2.shadow.camera.far = 10.0;
+      this.spot_light2.castShadow = true;
+      this.spot_light2.shadow.bias = -0.02;
+      this.spot_light2.shadow.mapSize.width = 512;
+      this.spot_light2.shadow.mapSize.height = 512;
+      this.spot_light2.shadow.camera.near = 0.2;
+      this.spot_light2.shadow.camera.far = 10.0;
 
-      const spot_light3 = new THREE.SpotLight(0xffffff, 75.0, 0, Math.PI/4, 0.4);
-      spot_light3.position.set(-26.5, 5.0, 7.6);
-      spot_light3.target.position.set(-23.0, 0.0, -1.0);
+      this.spot_light3 = new THREE.SpotLight(0xffffff, 75.0, 0, Math.PI/4, 0.4);
+      this.spot_light3.position.set(-26.5, 5.0, 7.6);
+      this.spot_light3.target.position.set(-23.0, 0.0, -1.0);
       
-      spot_light3.castShadow = true;
-      spot_light3.shadow.bias = -0.0001;
-      spot_light3.shadow.mapSize.width = 1024;
-      spot_light3.shadow.mapSize.height = 1024;
-      spot_light3.shadow.camera.near = 0.01;
-      spot_light3.shadow.camera.far = 25.0;
+      this.spot_light3.castShadow = true;
+      this.spot_light3.shadow.bias = -0.0001;
+      this.spot_light3.shadow.mapSize.width = 1024;
+      this.spot_light3.shadow.mapSize.height = 1024;
+      this.spot_light3.shadow.camera.near = 0.01;
+      this.spot_light3.shadow.camera.far = 25.0;
       
-      this.scene_.add( spot_light );
-      this.scene_.add( spot_light2 );
-      this.scene_.add( spot_light3 );
+      this.scene_.add( this.spot_light );
+      this.scene_.add( this.spot_light2 );
+      this.scene_.add( this.spot_light3 );
 
       ///////////
       // Debug //
@@ -131,9 +143,9 @@ export const component_lights = (() => {
 
         this.debug_light_helpers_ = [];
         this.debug_light_helpers_.push(new THREE.DirectionalLightHelper( this.directional_light ));
-        this.debug_light_helpers_.push(new THREE.SpotLightHelper( spot_light ));
-        this.debug_light_helpers_.push(new THREE.SpotLightHelper( spot_light2 ));
-        this.debug_light_helpers_.push(new THREE.SpotLightHelper( spot_light3 ));
+        this.debug_light_helpers_.push(new THREE.SpotLightHelper( this.spot_light ));
+        this.debug_light_helpers_.push(new THREE.SpotLightHelper( this.spot_light2 ));
+        this.debug_light_helpers_.push(new THREE.SpotLightHelper( this.spot_light3 ));
 
         for (const light of this.debug_light_helpers_)
         {
@@ -153,10 +165,31 @@ export const component_lights = (() => {
         this.spot_light_shadow_bias = -0.02;
 
         this.spot_lights = [];
-        this.spot_lights.push(spot_light);
-        this.spot_lights.push(spot_light2);
-        this.spot_lights.push(spot_light3);
+        this.spot_lights.push(this.spot_light);
+        this.spot_lights.push(this.spot_light2);
+        this.spot_lights.push(this.spot_light3);
       }
+    }
+
+    destroy()
+    {
+      this.scene_.environment.dispose();
+      this.directional_light.dispose();
+      this.point_light1.dispose();
+      this.point_light2.dispose();
+      this.spot_light.dispose();
+      this.spot_light2.dispose();
+      this.spot_light3.dispose();
+
+      if (env.DEBUG_MODE)
+      {
+        for (let helper of this.debug_light_helpers_)
+        {
+          helper.dispose();
+        }
+      }
+
+      super.destroy();
     }
 
     on_initialized()

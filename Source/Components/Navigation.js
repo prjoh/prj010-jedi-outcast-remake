@@ -79,6 +79,24 @@ export const component_navigation = (() => {
       }
     }
 
+    destroy()
+    {
+      if (env.DEBUG_MODE)
+      {
+        for (let mesh of NavAgentComponent.debug_meshes)
+        {
+          mesh.material.dispose();
+          mesh.geometry.dispose();
+        }
+
+        NavAgentComponent.debug_meshes = [];
+        NavAgentComponent.editor_initialized = false;
+        NavAgentComponent.draw_ai_behaviors = false;
+      }
+
+      super.destroy();
+    }
+
     on_initialized()
     {
       super.on_initialized();
@@ -216,6 +234,27 @@ export const component_navigation = (() => {
       this.nav_mesh_query_ = new NavMeshQuery(this.nav_mesh);
     }
 
+    destroy()
+    {
+      if (env.DEBUG_MODE)
+      {
+        for (let mesh of NavMeshComponent.debug_meshes)
+        {
+          mesh.geometry.dispose();
+          mesh.mesh.geometry.dispose();
+          mesh.mesh.material.dispose();
+        }
+
+        NavMeshComponent.debug_meshes = [];
+        NavMeshComponent.editor_initialized = false;
+        NavMeshComponent.draw_ai_behaviors = false;
+      }
+
+      this.nav_mesh.destroy();
+
+      super.destroy();
+    }
+
     on_initialized()
     {
       super.on_initialized();
@@ -264,6 +303,41 @@ export const component_navigation = (() => {
       }
 
       return point;
+    }
+
+    find_random_point_circle(position, radius)
+    {
+      const attempts = 10;
+
+      for (let i = 0; i < attempts; ++i)
+      {
+        const p = this.find_closest_point(position);
+        const { success, status, randomPolyRef, randomPoint } = this.nav_mesh_query_.findRandomPointAroundCircle(p, radius);
+        
+        if (success === false)
+        {
+          log.error("Failed to find closest point.");
+          continue;
+        }
+
+        const check_radius = (p1, p2, r) => {
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const dz = p2.z - p1.z;
+          const distanceSquared = dx * dx + dy * dy + dz * dz;
+          const radiusSquared = r * r;
+          return distanceSquared <= radiusSquared;
+        };
+
+        if (check_radius(p, randomPoint, radius) === false)
+        {
+          continue;
+        }
+
+        return { success: true, point: randomPoint };
+      }
+      
+      return { success: false, point: null };
     }
   };
 

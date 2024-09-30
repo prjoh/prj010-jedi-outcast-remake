@@ -9,6 +9,7 @@ import { component_player_state } from '../Components/PlayerState';
 import { component_enemy_behavior } from '../Components/EnemyBehavior';
 import { component_physics } from '../Components/Physics';
 import { ANIM_FPS } from '../Config'
+import { log } from '../Log';
 
 
 export const system_animation = (() => {
@@ -70,6 +71,10 @@ export const system_animation = (() => {
         const is_run_left = c_player_state.get_player_action(component_player_state.ePlayerAction.PS_RunLeft);
         const is_run_right = c_player_state.get_player_action(component_player_state.ePlayerAction.PS_RunRight);
         const is_blocking = c_player_state.get_player_action(component_player_state.ePlayerAction.PS_Blocking);
+        const is_hit = c_player_state.get_player_action(component_player_state.ePlayerAction.PS_Hit);
+        const is_dead = c_player_state.get_player_action(component_player_state.ePlayerAction.PS_Dead);
+
+        c_player_state.unset_player_action(component_player_state.ePlayerAction.PS_Hit);
 
         let rotation = c_transform.local_rotation;
 
@@ -95,18 +100,27 @@ export const system_animation = (() => {
         this.set_fsm_parameter(fsm, "is_run_right", is_run_right);
         this.set_fsm_parameter(fsm, "is_attacking", c_player_state.is_attack_pending());
         this.set_fsm_parameter(fsm, `is_blocking${block_id}`, is_blocking);
+        this.set_fsm_parameter(fsm, "is_hit", is_hit);
+        this.set_fsm_parameter(fsm, "is_dead", is_dead);
 
         const is_player_attacking = c_player_state.get_player_action(component_player_state.ePlayerAction.PS_Attacking);
 
         // TODO: HACK!
-        const can_attack = c_anim_controller.current_action_ !== null && c_anim_controller.current_action_.getClip().name.includes('Idle');
+        // const can_attack = c_anim_controller.current_action_ !== null && c_anim_controller.current_action_.getClip().name.includes('Idle');
 
-        if (c_player_state.is_attack_pending() && is_player_attacking === false && can_attack)
+        const is_being_hit = c_player_state.get_hit_state() === component_player_state.eHitState.HS_Impact;
+
+        if (c_player_state.is_attack_pending() && is_player_attacking === false && is_being_hit === false)// && can_attack)
         {
           c_player_state.consume_attack_event();
         }
 
-        this.update_fsm(fsm, {controller: c_anim_controller, transform: c_transform, player_state: c_player_state});
+        const c_transform_root = c_transform.root;
+        const entity_root = c_transform_root.entity_;
+        const c_kcc = entity_root.get_component("KinematicCharacterController");
+
+        this.update_fsm(fsm, { controller: c_anim_controller, transform: c_transform_root, collider: c_kcc });
+        // this.update_fsm(fsm, {controller: c_anim_controller, transform: c_transform});//, player_state: c_player_state});
 
         c_anim_controller.mixer_.update(delta_time_s);
 
@@ -144,6 +158,8 @@ export const system_animation = (() => {
     {
       super.on_state_enter(state);
 
+      // log.debug(`${user_data.controller.entity.name} - Enter: ${state.name}`);
+
       let animation_controller = user_data.controller;
 
       const fsm = animation_controller.animation_fsm_;
@@ -172,20 +188,20 @@ export const system_animation = (() => {
         }
       }
 
-      if (user_data.player_state)
-      {
-        const is_player_attacking = user_data.player_state.get_player_action(component_player_state.ePlayerAction.PS_Attacking);
+      // if (user_data.player_state)
+      // {
+      //   const is_player_attacking = user_data.player_state.get_player_action(component_player_state.ePlayerAction.PS_Attacking);
 
-        if (is_player_attacking)
-        {
-          const on_finished = (e) => {
-            user_data.player_state.set_attack_state(component_player_state.eAttackState.AS_None);
-            user_data.player_state.unset_player_action(component_player_state.ePlayerAction.PS_Attacking); 
-            animation_controller.mixer_.removeEventListener('finished', on_finished, false);
-          };
-          animation_controller.mixer_.addEventListener('finished', on_finished, false);
-        }
-      }
+      //   if (is_player_attacking)
+      //   {
+      //     const on_finished = (e) => {
+      //       user_data.player_state.set_attack_state(component_player_state.eAttackState.AS_None);
+      //       user_data.player_state.unset_player_action(component_player_state.ePlayerAction.PS_Attacking); 
+      //       animation_controller.mixer_.removeEventListener('finished', on_finished, false);
+      //     };
+      //     animation_controller.mixer_.addEventListener('finished', on_finished, false);
+      //   }
+      // }
 
       animation_controller.play_animation(state.name);
     }
@@ -220,6 +236,11 @@ export const system_animation = (() => {
           let position = transform.position;
           let rotation = transform.rotation;
 
+          animation_controller.root_rotation_euler_buffer.setFromQuaternion(animation_controller.root_rotation_buffer2, 'YXZ');
+          animation_controller.root_rotation_euler_buffer.x = 0;
+          animation_controller.root_rotation_euler_buffer.z = 0;
+          animation_controller.root_rotation_buffer2.setFromEuler(animation_controller.root_rotation_euler_buffer);
+
           position.add(animation_controller.root_translation_buffer2);
           rotation.premultiply(animation_controller.root_rotation_buffer2.invert());
 
@@ -232,32 +253,32 @@ export const system_animation = (() => {
         }
       }
 
-      if (user_data.player_state && user_data.player_state.get_player_action(component_player_state.ePlayerAction.PS_Attacking))
-      {
-        // const animation_duration = animation_controller.current_action_.getClip().duration;
-        const animation_time = animation_controller.current_action_.time;
+      // if (user_data.player_state && user_data.player_state.get_player_action(component_player_state.ePlayerAction.PS_Attacking))
+      // {
+      //   // const animation_duration = animation_controller.current_action_.getClip().duration;
+      //   const animation_time = animation_controller.current_action_.time;
 
-        const frame_index = Math.floor(animation_time * ANIM_FPS);
-        // const frame_count = Math.floor(animation_duration * ANIM_FPS);
+      //   const frame_index = Math.floor(animation_time * ANIM_FPS);
+      //   // const frame_count = Math.floor(animation_duration * ANIM_FPS);
 
-        const attack_frames = animation_controller.get_animation_config(state.name).attack_frames;
+      //   const attack_frames = animation_controller.get_animation_config(state.name).attack_frames;
 
-        const is_attack_state_windup = user_data.player_state.get_attack_state() === component_player_state.eAttackState.AS_WindUp;
-        const is_attack_state_attack = user_data.player_state.get_attack_state() === component_player_state.eAttackState.AS_Attack;
+      //   const is_attack_state_windup = user_data.player_state.get_attack_state() === component_player_state.eAttackState.AS_WindUp;
+      //   const is_attack_state_attack = user_data.player_state.get_attack_state() === component_player_state.eAttackState.AS_Attack;
 
-        if (!is_attack_state_windup && frame_index < attack_frames[0])
-        {
-          user_data.player_state.set_attack_state(component_player_state.eAttackState.AS_WindUp);
-        }
-        else if (is_attack_state_windup && frame_index >= attack_frames[0])
-        {
-          user_data.player_state.set_attack_state(component_player_state.eAttackState.AS_Attack);
-        }
-        else if (is_attack_state_attack && frame_index >= attack_frames[1])
-        {
-          user_data.player_state.set_attack_state(component_player_state.eAttackState.AS_Recovery);
-        }
-      }
+      //   if (!is_attack_state_windup && frame_index < attack_frames[0])
+      //   {
+      //     user_data.player_state.set_attack_state(component_player_state.eAttackState.AS_WindUp);
+      //   }
+      //   else if (is_attack_state_windup && frame_index >= attack_frames[0])
+      //   {
+      //     user_data.player_state.set_attack_state(component_player_state.eAttackState.AS_Attack);
+      //   }
+      //   else if (is_attack_state_attack && frame_index >= attack_frames[1])
+      //   {
+      //     user_data.player_state.set_attack_state(component_player_state.eAttackState.AS_Recovery);
+      //   }
+      // }
     }
 
     on_state_exit(state, user_data)

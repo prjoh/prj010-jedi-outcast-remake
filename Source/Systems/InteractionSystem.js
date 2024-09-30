@@ -1,5 +1,6 @@
 import { component_interact } from '../Components/Interactable';
 import { component_physics } from '../Components/Physics';
+import { component_player_state } from '../Components/PlayerState';
 import { ecs_component } from '../ECS/Component';
 import { ecs_system } from '../ECS/System';
 
@@ -61,8 +62,26 @@ export const system_interact = (() => {
           );
 
           c_collider.body_.applyImpulse(c_pushable.impulse_, c_pushable.rel_pos);
+        }
 
-          // console.log(`Player pushed ${c_pushable.name}!`);
+        if (c_physics_state.is_colliding("Player", "Level_DeathTrigger"))
+        {
+          let e_player = this.entity_manager_.get_entity("PlayerMesh");
+          let c_player_state = e_player.get_component("PlayerState");
+
+          if (c_player_state.get_player_action(component_player_state.ePlayerAction.PS_Falling))
+          {
+            continue;
+          }
+
+          c_player_state.set_player_action(component_player_state.ePlayerAction.PS_Dead);
+          c_player_state.set_player_action(component_player_state.ePlayerAction.PS_Falling);
+
+          let e_audio = this.entity_manager_.get_entity("PlayerAudio_Voice");
+          let c_emitter = e_audio.get_component("AudioEmitterComponent");
+          c_emitter.stop();
+          c_emitter.set_audio('falling');
+          c_emitter.play();
         }
       }
     }

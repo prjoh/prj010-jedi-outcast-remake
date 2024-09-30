@@ -12,13 +12,14 @@ export const component_blaster = (() => {
       this.uuid = new THREE.MathUtils.generateUUID();
 
       this.mesh_ = new THREE.Mesh(
-        new THREE.CapsuleGeometry( 0.005, 0.4, 1, 3 ), 
+        new THREE.CapsuleGeometry( 0.005, 0.7, 1, 3 ), 
         new THREE.MeshStandardMaterial({
           color: 0xffffff, 
           emissive: 0xf71223, 
-          emissiveIntensity: 2.5
+          emissiveIntensity: 2.5,
         })
       );
+      this.mesh_.frustumCulled = false;
       this.mesh_.visible = false;
       this.next_ = null;
 
@@ -27,14 +28,19 @@ export const component_blaster = (() => {
       this.direction = new THREE.Vector3();
       this.velocity = new THREE.Vector3();
 
-      const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 ); 
-      const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
-      const material2 = new THREE.MeshBasicMaterial( {color: 0xff0000} ); 
+      // const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 ); 
+      // const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+      // const material2 = new THREE.MeshBasicMaterial( {color: 0xff0000} ); 
 
-      this.p1 = new THREE.Mesh( geometry, material );
-      this.p2 = new THREE.Mesh( geometry, material2 );
-      this.p1.visible = false;
-      this.p2.visible = false;
+      // this.p1 = new THREE.Mesh( geometry, material );
+      // this.p2 = new THREE.Mesh( geometry, material2 );
+      // this.p1.visible = false;
+      // this.p2.visible = false;
+
+      this.p1 = new THREE.Vector3();
+      this.p2 = new THREE.Vector3();
+
+      this.is_deflected_ = false;
     }
 
     create(position, rotation)
@@ -43,6 +49,7 @@ export const component_blaster = (() => {
       this.mesh_.quaternion.copy(rotation);
       this.mesh_.visible = true;
       this.is_active = true;
+      this.is_deflected_ = false;
 
       // this.p1.visible = true;
       // this.p2.visible = true;
@@ -50,11 +57,17 @@ export const component_blaster = (() => {
 
     destroy()
     {
+      this.mesh_.geometry.dispose();
+      this.mesh_.material.dispose();
+    }
+
+    on_despawn()
+    {
       this.mesh_.visible = false;
       this.is_active = false;
 
-      this.p1.visible = false;
-      this.p2.visible = false;
+      // this.p1.visible = false;
+      // this.p2.visible = false;
     }
 
     set_next(next)
@@ -65,6 +78,16 @@ export const component_blaster = (() => {
     get_next(next)
     {
       return this.next_;
+    }
+
+    get is_deflected()
+    {
+      return this.is_deflected_;
+    }
+
+    set_deflect()
+    {
+      this.is_deflected_ = true;
     }
   }
 
@@ -92,8 +115,8 @@ export const component_blaster = (() => {
         this.instances_.push(new BlasterInstance(params.lifetime));
         this.scene_.add(this.instances_[i].mesh_);
 
-        this.scene_.add(this.instances_[i].p1);
-        this.scene_.add(this.instances_[i].p2);
+        // this.scene_.add(this.instances_[i].p1);
+        // this.scene_.add(this.instances_[i].p2);
       }
 
       for (let i = 0; i < this.size_ - 1; ++i)
@@ -112,6 +135,16 @@ export const component_blaster = (() => {
 
       this.deflect_outer = new Set();
       this.deflect_inner = new Set();
+    }
+
+    destroy()
+    {
+      super.destroy();
+
+      for (let i = 0; i < this.size_ - 1; ++i)
+      {
+        this.instances_[i].destroy();
+      }
     }
 
     spawn(target)
@@ -158,7 +191,7 @@ export const component_blaster = (() => {
         this.deflect_outer.delete(instance);
       }
 
-      instance.destroy();
+      instance.on_despawn();
       instance.set_next(this.available_);
       this.available_ = instance;
     }

@@ -4,6 +4,7 @@ import { component_transform } from '../Components/Transform';
 import { ecs_component } from '../ECS/Component';
 import { ecs_system } from '../ECS/System';
 import { component_player_blocker } from '../Components/PlayerBlocker';
+import { component_enemy_behavior } from '../Components/EnemyBehavior';
 
 
 export const system_physics = (() => {
@@ -29,6 +30,12 @@ export const system_physics = (() => {
         component_player_blocker.PlayerBlocker.CLASS_NAME,
         component_transform.Transform.CLASS_NAME,
       );
+      // TODO: Hacky
+      this.physics_system_tuples_enemy_trigger = new ecs_component.ComponentContainer(
+        component_enemy_behavior.EnemyBehaviorComponent.CLASS_NAME,
+        component_physics .CylinderTrigger.CLASS_NAME,
+        component_transform.Transform.CLASS_NAME,
+      );
     }
 
     init() {}
@@ -41,6 +48,7 @@ export const system_physics = (() => {
       // this.entity_manager_.update_component_container(this.physics_system_tuples_box_triggers);
       this.entity_manager_.update_component_container(this.physics_system_tuples_player_blocker);
       this.entity_manager_.update_component_container(this.physics_system_tuples_cylinder);
+      this.entity_manager_.update_component_container(this.physics_system_tuples_enemy_trigger);
     }
 
     fixed_update(fixed_delta_time_s)
@@ -220,6 +228,26 @@ export const system_physics = (() => {
         outer_trigger.body_.getWorldTransform().setRotation(col_rot1);
         inner_trigger.body_.getWorldTransform().setOrigin(col_pos2);
         inner_trigger.body_.getWorldTransform().setRotation(col_rot2);
+      }
+
+      for (let i = 0; i < this.physics_system_tuples_enemy_trigger.size; ++i)
+      {
+        const [behaviors, triggers, transforms] = this.physics_system_tuples_enemy_trigger.component_tuples;
+
+        let c_trigger = triggers[i];
+        let c_transform = transforms[i];
+
+        const trans_pos = c_transform.position;
+        const trans_rot = c_transform.rotation;
+
+        let col_pos = c_trigger.body_.getWorldTransform().getOrigin();
+        let col_rot = c_trigger.body_.getWorldTransform().getRotation();
+
+        col_pos.setValue(trans_pos.x, trans_pos.y, trans_pos.z);
+        col_rot.setValue(trans_rot.x, trans_rot.y, trans_rot.z, trans_rot.w);
+
+        c_trigger.body_.getWorldTransform().setOrigin(col_pos);
+        c_trigger.body_.getWorldTransform().setRotation(col_rot);
       }
 
       const [kccs, transforms] = this.physics_system_tuples_kcc.component_tuples;

@@ -76,6 +76,11 @@ export const component_camera = (() => {
 
       this.position_offset_buffer = new THREE.Vector3();
       this.current_position_offset = new THREE.Vector3();
+
+      this.rotation_speed = 0.25;
+      this.rotation_radius = 5.0;
+      this.zero_offset = new THREE.Vector3(0.0, 0.0, 0.0);
+      this.angle_buffer = 0.0;
     }
   };
 

@@ -4,6 +4,7 @@ import { assert } from './Assert';
 import { time, Time } from './Time';
 import { resources } from './ResourceManager';
 import { game_world } from './Worlds/GameWorld';
+import { ecs_manager } from './ECS/EntityManager';
 
 
 export const game = (() => {
@@ -72,6 +73,8 @@ export const game = (() => {
 
     async on_load_completed_()
     {
+      Ammo = await AmmoLoader();
+
       await this.current_world_.init_async();
       this.current_world_.init();
 
@@ -85,6 +88,19 @@ export const game = (() => {
     on_load_error_(url)
     {
       log.error(`Game.on_load_error_: ${url}`);
+    }
+
+    async reload()
+    {
+      this.set_request_update_(false);
+
+      Ammo = await AmmoLoader();
+
+      this.current_world_.destroy();
+      this.current_world_.init();
+
+      this.clock_.init();
+      this.set_request_update_(true);
     }
 
     set_request_update_(is_active)
@@ -123,6 +139,12 @@ export const game = (() => {
       }
       this.current_world_.update(Time.delta_time_s);
       this.current_world_.late_update(Time.delta_time_s);
+
+      const quit_state = this.current_world_.quit_state;
+      if (quit_state !== ecs_manager.eQuitState.QR_None)
+      {
+        this.reload();
+      }
     }
 
     /*

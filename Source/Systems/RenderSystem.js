@@ -103,6 +103,12 @@ export const system_renderer = (() => {
       let c_render_state = e_singletons.get_component("RenderState");
       let c_camera = e_singletons.get_component("PerspectiveCamera");
 
+      if (env.DEBUG_MODE)
+      {
+        let c_debug_drawer = e_singletons.get_component("DebugDrawer");
+        c_debug_drawer.tick(delta_time_s);
+      }
+
       // if (c_render_state.has_resized)
       // {
       //   const [canvas_width, canvas_height] = c_render_state.canvas_size;

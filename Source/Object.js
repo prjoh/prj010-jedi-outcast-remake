@@ -25,31 +25,31 @@ export const object = (() => {
       this.size_ = 0;
     }
 
-  // Default iterator (for...of loop) iterates over objects
-  [Symbol.iterator]() {
-    return this.values();
-  }
-
-  // Iterator for keys
-  *keys() {
-    for (let key of this.object_keys_) {
-      yield key;
+    // Default iterator (for...of loop) iterates over objects
+    [Symbol.iterator]() {
+      return this.values();
     }
-  }
 
-  // Iterator for objects (values)
-  *values() {
-    for (let obj of this.objects_) {
-      yield obj;
+    // Iterator for keys
+    *keys() {
+      for (let key of this.object_keys_) {
+        yield key;
+      }
     }
-  }
 
-  // Iterator for [key, value] pairs
-  *entries() {
-    for (let i = 0; i < this.object_keys_.length; i++) {
-      yield [this.object_keys_[i], this.objects_[i]];
+    // Iterator for objects (values)
+    *values() {
+      for (let obj of this.objects_) {
+        yield obj;
+      }
     }
-  }
+
+    // Iterator for [key, value] pairs
+    *entries() {
+      for (let i = 0; i < this.object_keys_.length; i++) {
+        yield [this.object_keys_[i], this.objects_[i]];
+      }
+    }
 
     get size()
     {
@@ -59,7 +59,7 @@ export const object = (() => {
 
     destroy()
     {
-      for (let c in this.objects_) {
+      for (let c of this.objects_) {
         c.destroy();
       }
       this.objects_ = null;

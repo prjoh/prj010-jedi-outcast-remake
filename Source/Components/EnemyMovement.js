@@ -7,8 +7,9 @@ import { assert } from '../Assert';
 export const component_enemy_movement = (() => {
 
   const eMovementType = Object.freeze({
-    MT_Walking:  0,
-    MT_Running:  1,
+    MT_Walking:    0,
+    MT_Searching:  1,
+    MT_Running:    2,
   });
 
   class EnemyMovementComponent extends ecs_component.Component
@@ -24,9 +25,11 @@ export const component_enemy_movement = (() => {
       super();
 
       this.move_speed_walking_ = 0.8;
-      this.move_speed_running_ = 1.6;
+      this.move_speed_running_ = 3.5;
 
-      this.waypoint_threshold = Math.pow(0.1, 2);
+      this.turn_speed_combat = 6.0;
+
+      this.waypoint_threshold = Math.pow(0.5, 2);
 
       this.current_move_speed = 0.0;
       this.current_turn_speed = 110.0;
@@ -40,6 +43,8 @@ export const component_enemy_movement = (() => {
       this.is_turn_target_reached_ = false;
 
       this.direction_buffer = new THREE.Vector3();
+      this.quaternion_buffer = new THREE.Quaternion();
+      this.matrix_buffer = new THREE.Matrix4();
     }
 
     set_move_target(move_target, movement_type)
@@ -48,7 +53,7 @@ export const component_enemy_movement = (() => {
       this.is_moving_ = false;
       this.is_move_target_reached_ = false;
 
-      if (movement_type === eMovementType.MT_Walking)
+      if (movement_type === eMovementType.MT_Walking || movement_type === eMovementType.MT_Searching)
       {
         this.current_move_speed = this.move_speed_walking_;
       }

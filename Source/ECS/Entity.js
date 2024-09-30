@@ -42,6 +42,16 @@ export const ecs_entity = (() => {
       return this.name_;
     }
 
+    get root()
+    {
+      if (this.parent_ !== null)
+      {
+        return this.parent_.root;
+      }
+
+      return this;
+    }
+
     destroy()
     {
       if (this.parent_ !== null)
@@ -98,6 +108,35 @@ export const ecs_entity = (() => {
     get_component(name)
     {
       return this.components_.find(name);
+    }
+
+    find_component(name)
+    {
+
+      let result = this.components_.find(name);
+
+      if (!result)
+      {
+        for (const c of this.children_)
+        {
+          result = c.get_component(name);
+          if (result)
+          {
+            return result;
+          }
+        }
+
+        for (const c of this.children_)
+        {
+          result = c.find_component(name);
+          if (result)
+          {
+            return result;
+          }
+        }
+      }
+
+      return result;
     }
   };
 

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { assert } from './Assert';
 
 class Timer
 {
@@ -10,6 +11,22 @@ class Timer
     this.init_time_ = Time.elapsed_time;
 
     this.uuid = new THREE.MathUtils.generateUUID();
+    this.is_active = false;
+  }
+
+  reset(time_s = null)
+  {
+    this.is_active = false;
+    this.init_time_ = Time.elapsed_time;
+    if (time_s !== null)
+    {
+      this.time_s_ = time_s;
+    }
+  }
+
+  start()
+  {
+    this.init_time_ = Time.elapsed_time;
     this.is_active = true;
   }
 
@@ -20,7 +37,8 @@ class Timer
     {
       if (this.is_looping_)
       {
-        this.init_time_ = Time.elapsed_time;
+        this.reset();
+        this.start();
       }
       else
       {
@@ -65,13 +83,28 @@ class Time
     return timer.uuid;
   }
 
+  static start_timer(timer_handle)
+  {
+    assert(this.timers_.has(timer_handle));
+    this.timers_.get(timer_handle).start();
+  }
+
+  static reset_timer(timer_handle, time_s = null)
+  {
+    assert(this.timers_.has(timer_handle));
+    this.timers_.get(timer_handle).reset(time_s);
+  }
+
   static destroy_timer(timer_handle)
   {
-    if (this.timers_.has(timer_handle) === false)
-    {
-      return;
-    }
+    assert(this.timers_.has(timer_handle));
     this.timers_.delete(timer_handle);
+  }
+
+  static is_timer_active(timer_handle)
+  {
+    assert(this.timers_.has(timer_handle));
+    return this.timers_.get(timer_handle).is_active;
   }
 };
 
@@ -105,11 +138,9 @@ export const time = (() => {
       Time.elapsed_time_ = this.clock_.getElapsedTime();
 
       Time.timers_.forEach((v, k, m) => {
-        v.tick();
-
-        if (v.is_active === false)
+        if (v.is_active)
         {
-          m.delete(k);
+          v.tick();
         }
       });
     }

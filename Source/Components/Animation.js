@@ -4,6 +4,7 @@ import { ANIM_FPS } from '../Config';
 import { fsm } from '../FSM';
 import { ecs_component } from '../ECS/Component';
 import { assert } from '../Assert';
+import { env } from '../Env';
 
 
 export const component_animation = (() => {
@@ -58,6 +59,9 @@ export const component_animation = (() => {
       this.keyframe_event_handlers_ = new Map();
       this.current_keyframe_index_ = -1;
 
+      this.onplay_event_handlers_ = new Map();
+      this.onfinish_event_handlers_ = new Map();
+
       for (const [ parameter, initial_value ] of this.animation_parameters_)
       {
         this.animation_fsm_.add_parameter(parameter, initial_value);
@@ -75,6 +79,7 @@ export const component_animation = (() => {
       this.root_rotation_buffer1 = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
       this.root_rotation_buffer2 = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
       this.root_rotation_offset_buffer = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
+      this.root_rotation_euler_buffer = new THREE.Euler();
 
       this.add_animations_(params.mesh, params.animations);
     }
@@ -123,13 +128,20 @@ export const component_animation = (() => {
       const direction = e.direction;
       const target = e.target;
 
-      const current_state = this.animation_fsm_.get_state(action._clip.name);
+      const animation_name = action._clip.name;
+      const current_state = this.animation_fsm_.get_state(animation_name);
       for (const [ to_state_name, transitions ] of current_state.transitions)
       {
         for (const t of transitions)
         {
           t.set_is_active(true);
         }
+      }
+
+      if (this.onfinish_event_handlers_.has(animation_name))
+      {
+        let callback = this.onfinish_event_handlers_.get(animation_name);
+        callback(this.entity_);
       }
     }
 
@@ -144,6 +156,8 @@ export const component_animation = (() => {
         loop: true,
         apply_root_translation: false,
         apply_root_rotation: false,
+        onplay_event_handler: null,
+        onfinish_event_handler: null,
         keyframe_event_handlers: null,
       }
     }
@@ -167,20 +181,40 @@ export const component_animation = (() => {
 
       this.animation_clips_ = animations;
 
+      const animation_names = this.animation_clips_.map(e => e.name);
+
+      if (env.DEBUG_MODE)
+      {
+        const illegal_ac_states = [...this.animation_config_.keys()].filter(key => animation_names.includes(key) === false)
+        const illegal_transition_states = this.state_transitions_.filter(t => !animation_names.includes(t.from_state) || !animation_names.includes(t.to_state));
+        assert(illegal_ac_states.length === 0, `Illegal animation config states: ${illegal_ac_states.join(',')}`);
+        assert(illegal_transition_states.length === 0, `Illegal transition state names:\n  from_state(${illegal_transition_states.map(obj => obj.from_state).join(',')})\n  to_state(${illegal_transition_states.map(obj => obj.to_state).join(',')})`);
+      }
+
       const states = [];
 
-      for (const animation of this.animation_clips_)
+      for (const animation_name of animation_names)
       {
-        const state = this.animation_fsm_.create_state(animation.name);
+        const state = this.animation_fsm_.create_state(animation_name);
         states.push(state);
 
-        const ac = this.get_animation_config(animation.name);
+        const ac = this.get_animation_config(animation_name);
         if (ac.keyframe_event_handlers)
         {
           for (const keh of ac.keyframe_event_handlers)
           {
-            this.register_keyframe_event_handler(animation.name, keh.event_id, keh.keyframes, keh.callback);
+            this.register_keyframe_event_handler(animation_name, keh.event_id, keh.keyframes, keh.callback);
           }
+        }
+
+        if (ac.onplay_event_handler)
+        {
+          this.register_onplay_event_handler(animation_name, ac.onplay_event_handler);
+        }
+
+        if (ac.onfinish_event_handler)
+        {
+          this.register_onfinish_event_handler(animation_name, ac.onfinish_event_handler);
         }
       }
 
@@ -239,6 +273,34 @@ export const component_animation = (() => {
       this.keyframe_event_handlers_.set(animation_name, updated_event_handler_array);
     }
 
+    register_onplay_event_handler(animation_name, callback)
+    {
+      assert(this.onplay_event_handlers_.has(animation_name) === false);
+
+      this.onplay_event_handlers_.set(animation_name, callback);
+    }
+
+    unregister_onplay_event_handler(animation_name)
+    {
+      assert(this.onplay_event_handlers_.has(animation_name));
+
+      this.onplay_event_handlers_.delete(animation_name);
+    }
+
+    register_onfinish_event_handler(animation_name, callback)
+    {
+      assert(this.onfinish_event_handlers_.has(animation_name) === false);
+
+      this.onfinish_event_handlers_.set(animation_name, callback);
+    }
+
+    unregister_onfinish_event_handler(animation_name)
+    {
+      assert(this.onfinish_event_handlers_.has(animation_name));
+
+      this.onfinish_event_handlers_.delete(animation_name);
+    }
+
     play_animation(animation_name)
     {
       this.last_action_ = this.current_action_;
@@ -263,6 +325,12 @@ export const component_animation = (() => {
                           .play();
 
       this.current_keyframe_index_ = -1;
+
+      if (this.onplay_event_handlers_.has(animation_name))
+      {
+        let callback = this.onplay_event_handlers_.get(animation_name);
+        callback(this.entity_);
+      }
     }
 
     update_keyframe_event_handlers()

@@ -103,7 +103,10 @@ class GoalManager
           return;
         }
 
-        next_subgoal.activate_goal(this.ai_);
+        if (next_subgoal.is_active === false)
+        {
+          next_subgoal.activate_goal(this.ai_);
+        }
       }
     }
   }

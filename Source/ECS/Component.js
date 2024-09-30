@@ -95,7 +95,18 @@ export const ecs_component = (() => {
       super();
 
       this.entity_ = null;
+      // this.is_active_ = true;
     }
+
+    // get is_active()
+    // {
+    //   return this.is_active_;
+    // }
+
+    // set_active(is_active)
+    // {
+    //   this.is_active_ = is_active;
+    // }
 
     get entity()
     {

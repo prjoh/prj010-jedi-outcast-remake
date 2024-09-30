@@ -1,32 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="./favicon.ico">
-  <link rel="stylesheet" type="text/css" href="./style.css">
-  <title>Jedi Knight II: Jedi Outcast</title>
-</head>
-<body>
-  <script src="./Source/ThirdParty/ammo.js"></script>
-  <script src="./Source/main.js" type="module"></script>
-  <div class="loading-screen" id="loading-screen">
-    <div class="logo">
-      <img src="./Graphics/logo.png" class="centered-image">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="./favicon.ico">
+    <link rel="stylesheet" type="text/css" href="./style.css">
+    <title>Jedi Knight II: Jedi Outcast</title>
+  </head>
+  <body>
+    <script src="./Source/ThirdParty/ammo.js"></script>
+    <script src="./Source/main.js" type="module"></script>
+    <div class="start-menu" id="start-menu">
+      <div class="start-menu-container">
+        <h1 class="start-menu-title">Jedi Knight II: Jedi Outcast v0.1</h1>
+        <h3 class="start-menu-subtitle">A Remake Created by <a href="https://prjoh.xyz/" target="_blank">prjoh</a></h1>
+        <p class="start-menu-text">
+          This is a remake project of Raven Software's 2002 classic game created for educational purposes.<br>
+          The current version does not support mobile devices.<br>
+          Starting the game will require to download around 250MB of game data so it may take a while.<br>
+          May the force be with you.
+        </p>
+        <button class="start-button" id="start-button">START</button>
+        <h4 class="start-menu-info-title">Tested Browsers</h4>
+        <ul class="start-menu-info">
+          <li>✅ Chrome</li>
+          <li>✅ Safari</li>
+          <li>🚧 Firefox</li>
+          <li>✅ Edge</li>
+          <li>❌ Mobile Safari (iOS)</li>
+          <li>❌ Chrome on Android</li>
+        </ul>
+      </div>
     </div>
-    <div class="loading-bar-overflow">
-        <div class="loading-bar" id="loading-bar"></div>
+    <div class="loading-screen" id="loading-screen">
+      <div class="logo">
+        <img src="./Graphics/logo.png" class="centered-image">
+      </div>
+      <div class="loading-bar-overflow">
+          <div class="loading-bar" id="loading-bar"></div>
+      </div>
+      <div class="progress">
+          <span class="progress-value" id="progress-value">0%</span>
+          <span class="progress-message" id="progress-message">Loading Files ...</span>
+      </div>
     </div>
-    <div class="progress">
-        <span class="progress-value" id="progress-value">0%</span>
-        <span class="progress-message" id="progress-message">Loading Files ...</span>
+    <div class="scene" id="scene">
+      <div class="canvas" id="canvas"></div>
+      <div class="canvas-overlay">
+  <!--      Put overlay components like UI here-->
+        <div class="game-menu" id="game-menu">
+          <div class="game-menu-container">
+            <h1 class="game-menu-text1">MISSION FAILED</h1>
+            <h1 class="game-menu-text1">KYLE KATARN HAS DIED.</h1>
+            <h2 class="game-menu-text2">Press ENTER to restart.</h2>
+          </div>
+        </div>
+        <div id="health-bar-ui" class="health-bar">
+          <div class="health-bar-bg">
+            <div class="health-bar-inner"></div>
+            <div class="health-bar-animated"></div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="scene" id="scene">
-    <div class="canvas" id="canvas"></div>
-    <div class="canvas-overlay">
-<!--      Put overlay components like UI here-->
-    </div>
-  </div>
-</body>
+  </body>
 </html>

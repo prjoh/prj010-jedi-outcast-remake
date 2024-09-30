@@ -20,14 +20,13 @@ export const system_player_movement = (() => {
     fixed_update(fixed_delta_time_s)
     {
       const e_player = this.get_entity("Player");
-      const e_player_mesh = this.get_entity("PlayerMesh");
-
       let c_commander = e_player.get_component("PlayerCommander");
       let c_controls = e_player.get_component("CharacterControls");
       let c_kcc = e_player.get_component("KinematicCharacterController");
       let c_transform = e_player.get_component("Transform");
+
+      const e_player_mesh = this.get_entity("PlayerMesh");
       const c_state = e_player_mesh.get_component("PlayerState");
-      const is_blocking = c_state.get_player_action(component_player_state.ePlayerAction.PS_Blocking);
 
       let controller = c_kcc.controller_;
 
@@ -49,6 +48,13 @@ export const system_player_movement = (() => {
       {
         let velocity_run = c_controls.velocity_run_buffer;
 
+        if (c_state.get_player_action(component_player_state.ePlayerAction.PS_Dead))
+        {
+          velocity_run.setValue(0.0, velocity_run.y(), 0.0);
+          controller.setWalkDirection(velocity_run);
+          return;
+        }
+
         const friction = c_controls.friction_run;
         const speed = velocity_run.length();
 
@@ -64,6 +70,32 @@ export const system_player_movement = (() => {
         else
         {
           velocity_run.setValue(0.0, 0.0, 0.0);
+        }
+
+        let attacking_modifier = 1.0;
+
+        if (c_state.get_attack_state() !== component_player_state.eAttackState.AS_None ||
+            c_state.get_attack_state() !== component_player_state.eAttackState.AS_Recovery)
+        {
+          switch (c_state.get_attack_type()) {
+            case component_player_state.eAttackType.AT_Standing:
+              c_commander.move_forward = 1.0;
+              c_commander.move_right = 0.0;
+              attacking_modifier = 0.1;
+              break;
+            case component_player_state.eAttackType.AT_RunFront:
+              c_commander.move_forward = 1.0;
+              c_commander.move_right = 0.0;
+              attacking_modifier = 0.25;
+              break;
+            case component_player_state.eAttackType.AT_RunBack:
+              attacking_modifier = 0.0;
+              break;
+          }
+        }
+        else if (c_state.get_attack_state() === component_player_state.eAttackState.AS_Recovery)
+        {
+          attacking_modifier = 0.5;
         }
 
         let direction_run = c_controls.direction_run_buffer;
@@ -83,8 +115,13 @@ export const system_player_movement = (() => {
             right.z * direction_run.x() + forward.z * direction_run.z()
           );
 
+          const is_blocking = c_state.get_player_action(component_player_state.ePlayerAction.PS_Blocking);
           const blocking_modifier = is_blocking ? 0.1 : 1.0;
-          const acceleration_run = c_controls.acceleration_run * blocking_modifier;
+          
+          const is_being_hit = c_state.get_hit_state() === component_player_state.eHitState.HS_Impact;
+          const hit_modifier = is_being_hit ? 0.2 : 1.0;
+
+          const acceleration_run = c_controls.acceleration_run * blocking_modifier * attacking_modifier * hit_modifier;
 
           velocity_run.setValue(
             velocity_run.x() + direction_run.x() * acceleration_run * fixed_delta_time_s, 
@@ -115,6 +152,21 @@ export const system_player_movement = (() => {
 
     update(delta_time_s)
     {
+      const e_player_mesh = this.get_entity("PlayerMesh");
+      const c_state = e_player_mesh.get_component("PlayerState");
+
+      if (c_state.get_player_action(component_player_state.ePlayerAction.PS_Dead))
+      {
+        return;
+      }
+
+      let attacking_modifier = 1.0;
+
+      if (c_state.get_player_action(component_player_state.ePlayerAction.PS_Attacking))
+      {
+        attacking_modifier = 0.25;
+      }
+
       const e_player = this.get_entity("Player");
       let c_commander = e_player.get_component("PlayerCommander");
       let c_controls = e_player.get_component("CharacterControls");
@@ -128,8 +180,8 @@ export const system_player_movement = (() => {
       const rotation_dir_x = Math.sign(look_delta.y);
       const rotation_dir_y = Math.sign(-look_delta.x);
 
-      const rotation_x = Math.min(Math.abs(look_delta.y) * c_controls.rotation_speed * delta_time_s, c_controls.max_rotation);
-      const rotation_y = Math.min(Math.abs(look_delta.x) * c_controls.rotation_speed * delta_time_s, c_controls.max_rotation);
+      const rotation_x = Math.min(Math.abs(look_delta.y) * c_controls.rotation_speed * attacking_modifier * delta_time_s, c_controls.max_rotation);
+      const rotation_y = Math.min(Math.abs(look_delta.x) * c_controls.rotation_speed * attacking_modifier * delta_time_s, c_controls.max_rotation);
 
       c_target_transform.rotate_x(rotation_dir_x * rotation_x);
       c_transform.rotate_y(rotation_dir_y * rotation_y);

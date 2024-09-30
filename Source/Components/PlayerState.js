@@ -28,6 +28,12 @@ export const component_player_state = (() => {
     PS_Hit:         1 << 5,
     PS_Blocking:    1 << 6,
     PS_Dead:        1 << 7,
+    PS_Falling:     1 << 8,
+  });
+
+  const eHitState = Object.freeze({
+    HS_None: 0,
+    HS_Impact: 1,
   });
 
   const eAttackState = Object.freeze({
@@ -35,7 +41,13 @@ export const component_player_state = (() => {
     AS_WindUp: 1,
     AS_Attack: 2,
     AS_Recovery: 3,
-    AS_Buffer: 4,
+  });
+
+  const eAttackType = Object.freeze({
+    AT_None: 0,
+    AT_Standing: 1,
+    AT_RunFront: 2,
+    AT_RunBack: 3,
   });
 
   class PlayerState extends ecs_component.Component
@@ -55,6 +67,9 @@ export const component_player_state = (() => {
       this.attack_event_queue_ = [];
 
       this.attack_state_ = eAttackState.AS_None;
+      this.attack_type_ = eAttackType.AS_None;
+
+      this.hit_state_ = eHitState.HS_None;
     }
 
     on_initialized()
@@ -146,6 +161,19 @@ export const component_player_state = (() => {
       return this.action_flags_.is_set(player_action);
     }
 
+    //////////////////////
+    // Player hit state //
+    //////////////////////
+    set_hit_state(hit_state)
+    {
+      this.hit_state_ = hit_state;
+    }
+
+    get_hit_state()
+    {
+      return this.hit_state_;
+    }
+
     /////////////////////////
     // Player attack state //
     /////////////////////////
@@ -158,12 +186,27 @@ export const component_player_state = (() => {
     {
       return this.attack_state_;
     }
+
+    ////////////////////////
+    // Player attack type //
+    ////////////////////////
+    set_attack_type(attack_type)
+    {
+      this.attack_type_ = attack_type;
+    }
+
+    get_attack_type()
+    {
+      return this.attack_type_;
+    }
   };
 
   return {
     PlayerState: PlayerState,
     ePlayerAction: ePlayerAction,
     eAttackState: eAttackState,
+    eAttackType: eAttackType,
+    eHitState: eHitState,
   };
 
 })();

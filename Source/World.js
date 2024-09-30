@@ -21,6 +21,10 @@ export const world_base = (() => {
     {
     }
 
+    destroy()
+    {
+    }
+
     pre_update()
     {
     }

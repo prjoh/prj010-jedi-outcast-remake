@@ -20,6 +20,8 @@ import { system_enemy_behavior } from '../Systems/EnemyBehaviorSystem';
 import { system_enemy_movement } from '../Systems/EnemyMovementSystem';
 import { system_interact } from '../Systems/InteractionSystem';
 import { system_player_behavior } from '../Systems/PlayerBehaviorSystem';
+import { system_audio } from '../Systems/Audio';
+import { system_game_state } from '../Systems/GameStateSystem';
 
 import { component_renderer } from '../Components/RenderState';
 import { component_camera } from '../Components/Camera';
@@ -30,8 +32,11 @@ import { component_input } from '../Components/Input';
 import { component_navigation } from '../Components/Navigation';
 import { component_editor } from '../Components/Editor';
 import { component_interact } from '../Components/Interactable';
-
-// import * as Sponza from '../Test/Sponza/Sponza';
+import { component_health } from '../Components/Health';
+import { component_debug } from '../Components/Debug';
+import { component_game_menu } from '../Components/GameMenu';
+import { component_audio } from '../Components/Audio';
+import { component_combat_manager } from '../Components/CombatManager';
 
 
 export const game_world = (() => {
@@ -45,11 +50,14 @@ export const game_world = (() => {
       this.entity_manager_ = new ecs_manager.EntityManager();
 
       this.scene_ = new THREE.Scene();
-    
-      this.assets = new Map();
     }
 
-    // TODO: This is the routine that loads files from the server into local memory
+    get quit_state()
+    {
+      return this.entity_manager_.quit_state;
+    }
+
+    // TODO: Refactor
     load()
     {
       /*
@@ -57,14 +65,10 @@ export const game_world = (() => {
        */
       resources.ResourceManager.load_cube_map('sky');
 
-      // resources.ResourceManager.load_static_model_gltf('DamagedHelmet');
-
       resources.ResourceManager.load_static_model_gltf('skybox');
-      // resources.ResourceManager.load_static_model_gltf('test');
       resources.ResourceManager.load_static_model_gltf('level_01');
       resources.ResourceManager.load_static_model_gltf('level_01_dc');
       resources.ResourceManager.load_static_model_gltf('level_01_instanced');
-      // resources.ResourceManager.load_static_model_gltf('physics_test_box');
       resources.ResourceManager.load_skinned_model_gltf('kyle2_anim_comp2');
       resources.ResourceManager.load_skinned_model_gltf('stormtrooper_anim2');
       resources.ResourceManager.load_texture('Grid');
@@ -95,6 +99,67 @@ export const game_world = (() => {
       resources.ResourceManager.load_texture('stormtrooper/m_blaster_metalness', false);
       resources.ResourceManager.load_texture('stormtrooper/m_blaster_normal', false);
       resources.ResourceManager.load_texture('stormtrooper/m_blaster_roughness', false);
+
+      resources.ResourceManager.load_audio('effects/blaster/alt_fire', 'mp3');
+      resources.ResourceManager.load_audio('effects/blaster/fire', 'mp3');
+      resources.ResourceManager.load_audio('effects/blaster/hit_wall', 'mp3');
+      resources.ResourceManager.load_audio('effects/blaster/reflect1', 'mp3');
+      resources.ResourceManager.load_audio('effects/blaster/reflect2', 'mp3');
+      resources.ResourceManager.load_audio('effects/blaster/reflect3', 'mp3');
+
+      resources.ResourceManager.load_audio('effects/footsteps/boot1', 'wav');
+      resources.ResourceManager.load_audio('effects/footsteps/boot2', 'wav');
+      resources.ResourceManager.load_audio('effects/footsteps/boot3', 'wav');
+      resources.ResourceManager.load_audio('effects/footsteps/boot4', 'wav');
+
+      resources.ResourceManager.load_audio('effects/player/bodyfall_human1', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/bodyfall_human2', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/bodyfall_human3', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/death1', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/death2', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/death3', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/pain25', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/pain50', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/pain75', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/pain100', 'mp3');
+      resources.ResourceManager.load_audio('effects/player/falling1', 'mp3');
+      
+      resources.ResourceManager.load_audio('effects/ambient/kejim_ext', 'wav');
+
+      resources.ResourceManager.load_audio('effects/trooper/bodyfall_trooper1', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/bodyfall_trooper2', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/bodyfall_trooper3', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/bodyfall_trooper4', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/death1', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/death2', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/death3', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/pain25', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/pain50', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/pain75', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/pain100', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/victory1', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/victory2', 'mp3');
+      resources.ResourceManager.load_audio('effects/trooper/type1/victory3', 'mp3');
+      
+      resources.ResourceManager.load_audio('effects/lightsaber/saberon', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhum4', 'wav');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup1', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup2', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup3', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup4', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup5', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup6', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup7', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup8', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhup9', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhit', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhit1', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhit2', 'mp3');
+      resources.ResourceManager.load_audio('effects/lightsaber/saberhit3', 'mp3');
+      
+      resources.ResourceManager.load_audio('music/explore/impbaseb_explore', 'mp3');
+      resources.ResourceManager.load_audio('music/action/impbaseb_action', 'mp3');
+      resources.ResourceManager.load_audio('music/death_music', 'mp3');
     }
 
     async init_async()
@@ -109,20 +174,6 @@ export const game_world = (() => {
         await resources.ResourceManager.create_skinned_model_cache(mesh_requests);
 
         log.info("Skinned mesh cache creation successful.");
-
-        // return new Promise((resolve, reject) => {
-        //   const loading_manager = new THREE.LoadingManager();
-        //   loading_manager.onLoad = () => {
-        //     // this.scene_.add(...Sponza.createLights());
-        //     // this.scene_.add(this.assets.get('sponza'));
-
-        //     resolve();
-        //   };
-        //   loading_manager.onError = (url) => {
-        //     reject(`There was an error loading ${url}`);
-        //   };
-        //   Sponza.load(this.assets, loading_manager, this.anisotropy);
-        // });
       }
       catch (error)
       {
@@ -133,6 +184,8 @@ export const game_world = (() => {
     // TODO: We should have a separate load screen for data init phase
     init()
     {
+      resources.ResourceManager.reset_skinned_model_cache();
+
       /*
        * Setup entities
        */
@@ -152,8 +205,8 @@ export const game_world = (() => {
       // RenderState
       if (env.DEBUG_MODE)
       {
-        // e_singletons.add_component(component_debug.DebugComponent);
         e_singletons.add_component(component_editor.EditorComponent);
+        e_singletons.add_component(component_debug.DebugDrawer, { scene: this.scene_ });
       }
       e_singletons.add_component(component_input.InputComponent);
       e_singletons.add_component(component_physics.PhysicsState);
@@ -169,18 +222,18 @@ export const game_world = (() => {
         scene: this.scene_,
         camera: player_camera,
       });
+      e_singletons.add_component(component_combat_manager.CombatManager);
+      e_singletons.add_component(component_health.UI_HealthBar);
+      e_singletons.add_component(component_game_menu.UI_GameMenu);
+      const c_audio_listener = e_singletons.add_component(component_audio.AudioListenerComponent, {
+        camera: player_camera,
+      });
 
       if (env.DEBUG_MODE)
       {
         let c_physics_state = e_singletons.get_component("PhysicsState");
         c_physics_state.create_debug_drawer(this.scene_);
       }
-
-      let player_position = new THREE.Vector3(-2.5, 0.0, 7.5);
-
-      let c_camera = e_singletons.get_component("PerspectiveCamera");
-      c_camera.camera.position.copy(player_position)
-        .add(0, 2, 5);
 
       /** Game Entities */
 
@@ -226,6 +279,22 @@ export const game_world = (() => {
           });
           c_level_collider.set_friction(0.8);
           c_level_collider.set_rolling_friction(0.4);
+          i += 1;
+        }
+        else if (c.name.startsWith("Col_Death"))
+        {
+          c.visible = false;
+          let e_level_col = this.entity_manager_.create_entity(`Level_DeathTrigger`, e_level);
+          let c_level_col_transform = e_level.get_component("Transform");
+          e_level_col.add_component(component_physics.ConvexMeshTrigger, {
+            transform: c_level_col_transform,
+            physics_state: e_singletons.get_component("PhysicsState"),
+            mesh: c,
+            traverse: false,
+            collision_group: eCollisionGroup.CG_Default,
+            collision_mask: eCollisionGroup.CG_Player,
+            is_contact_listener: false,
+          });
           i += 1;
         }
         else if (c.name.startsWith("Col_"))
@@ -336,14 +405,45 @@ export const game_world = (() => {
           receive_shadow: true,
         });
 
-        // let e_level_instanced = this.entity_manager_.create_entity(`Level_Instanced${i}`, e_level);
-        // e_level_instanced.add_component(component_mesh.InstancedMeshComponent, {
-        //   scene: this.scene_,
-        //   model: c,
-        //   bounding_radius: 2.0,
-        // });
         i += 1;
       }
+
+      // Player
+      spawner.spawn_player(
+        this.entity_manager_, 
+        this.scene_, 
+        directional_light_target, 
+        new THREE.Vector3(-2.5, 0.0, 7.5), 
+        new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI, 0)),
+        c_audio_listener.listener_
+      );
+
+      // Global Audio
+      let e_audio_music = this.entity_manager_.create_entity("Audio_Music");
+      e_audio_music.add_component(component_audio.AudioEmitterComponent, {
+        listener: c_audio_listener.listener_,
+        audio_key: 'explore',
+        audio_lut: new Map([
+          ['explore', resources.ResourceManager.get_audio('music/explore/impbaseb_explore')],
+          ['action', resources.ResourceManager.get_audio('music/action/impbaseb_action')],
+          ['death', resources.ResourceManager.get_audio('music/death_music')],
+        ]),
+        volume: 1.0,
+        is_looping: true,
+        autoplay: true,
+      });
+
+      let e_audio_ambient = this.entity_manager_.create_entity("Audio_Ambient");
+      e_audio_ambient.add_component(component_audio.AudioEmitterComponent, {
+        listener: c_audio_listener.listener_,
+        audio_key: 'exterior',
+        audio_lut: new Map([
+          ['exterior', resources.ResourceManager.get_audio('effects/ambient/kejim_ext')],
+        ]),
+        volume: 0.25,
+        is_looping: true,
+        autoplay: true,
+      });
 
       // Stormtrooper
       let face_diffuse_map = resources.ResourceManager.get_texture('stormtrooper/m_face_diffuse', false);
@@ -396,181 +496,133 @@ export const game_world = (() => {
         blaster: stormtrooper_material_blaster,
       };
 
-      for (let i = 0; i < 2; ++i)
+      const enemy_spawns = [
+        {
+          position: new THREE.Vector3(-15.5, 0.0, -45.0),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 1.15, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+        {
+          position: new THREE.Vector3(-13.0, 0.0, -44.4),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 0.8, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+        {
+          position: new THREE.Vector3(1.0, 0.0, -33.5),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper02,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            path: [
+              new THREE.Vector3(1.0, 0.0, -70.0),
+              new THREE.Vector3(1.0, 0.0, -33.5),
+            ],
+          },
+        },
+        {
+          position: new THREE.Vector3(-0.45, 0.0, -31.25),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 0.75, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+        {
+          position: new THREE.Vector3(8.85, 0.0, -66.1),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 0.5, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+        {
+          position: new THREE.Vector3(9.6, 0.0, -68.2),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 0.5, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+        {
+          position: new THREE.Vector3(10.65, 0.0, -66.05),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 0.5, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+        {
+          position: new THREE.Vector3(11.35, 0.0, -69.23),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 0.5, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+        {
+          position: new THREE.Vector3(12.25, 0.0, -67.6),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 0.5, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+        {
+          position: new THREE.Vector3(13.6, 0.0, -69.2),
+          rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI * 0.5, 0)),
+          behavior_id: eBehaviorID.BID_Stormtrooper01,
+          behavior_params: {
+            distance_danger: 3.0,
+            distance_follow: 12.0,
+            animation_param_id: "idle",
+          },
+        },
+      ];
+
+      for (let i = 0; i < enemy_spawns.length; ++i)
       {
-        let enemy_position = new THREE.Vector3(-15.0 + i * 2.5, 0.0, -3.0);
-        let enemy_rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI, 0));
-
-        let behavior_id = (i % 2) === 0 ? eBehaviorID.BID_Stormtrooper01 : eBehaviorID.BID_Stormtrooper02;
-        let behavior_params = (i % 2) === 0 ? {
-          animation_param_id: "idle",
-        }
-        : {
-          path: [
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(0.0, 0.0, -35.0)),
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(14.0, 0.0, -35.0)),
-            new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(14.0, 0.0, 0.0)),
-            new THREE.Vector3().copy(enemy_position),
-          ],
-        };
-
+        const { position, rotation, behavior_id, behavior_params } = enemy_spawns[i];
         spawner.spawn_enemy(
           this.entity_manager_, 
           this.scene_, 
           stormtrooper_materials, 
-          enemy_position,
-          enemy_rotation,
-          "Stormtrooper_" + i,
+          position,
+          rotation,
+          "Stormtrooper" + i,
           behavior_id,
-          behavior_params
+          behavior_params,
+          c_audio_listener.listener_,
         );
       }
-
-      {
-        let enemy_position = new THREE.Vector3(-10.0, 0.0, -5.0);
-        let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
-        spawner.spawn_enemy(
-          this.entity_manager_, 
-          this.scene_, 
-          stormtrooper_materials, 
-          enemy_position,
-          enemy_rotation,
-          "Stormtrooper_" + 6,
-          eBehaviorID.BID_Stormtrooper02,
-          {
-            path: [
-              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(0.0, 0.0, 3.0)),
-              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-3.0, 0.0, 3.0)),
-              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-3.0, 0.0, 0.0)),
-              new THREE.Vector3().copy(enemy_position),
-            ],
-          }
-        ); 
-      }
-
-      {
-        let enemy_position = new THREE.Vector3(-17.5, 0.0, -5.0);
-        let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
-        spawner.spawn_enemy(
-          this.entity_manager_, 
-          this.scene_, 
-          stormtrooper_materials, 
-          enemy_position,
-          enemy_rotation,
-          "Stormtrooper_" + 7,
-          eBehaviorID.BID_Stormtrooper02,
-          {
-            path: [
-              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(2.5, 0.0, 3.0)),
-              new THREE.Vector3().copy(enemy_position).add(new THREE.Vector3(-2.5, 0.0, 3.0)),
-              new THREE.Vector3().copy(enemy_position),
-            ],
-          }
-        ); 
-      }
-
-      {
-        let enemy_position = new THREE.Vector3(-2.0, 0.0, -5.0);
-        let enemy_rotation = new THREE.Quaternion(0.0, 0.0, 0.0, 1.0);
-        spawner.spawn_enemy(
-          this.entity_manager_, 
-          this.scene_, 
-          stormtrooper_materials, 
-          enemy_position,
-          enemy_rotation,
-          "Stormtrooper_" + 8,
-          eBehaviorID.BID_Stormtrooper01,
-          {
-            animation_param_id: "idle",
-          }
-        ); 
-      }
-
-      // Player
-      let player_rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI, 0));
-      let e_player = spawner.spawn_player(this.entity_manager_, this.scene_, directional_light_target, player_position, player_rotation);
-
-      // SCENE TESTING
-
-      // // Player Model
-      // let e_player_model = this.entity_manager_.create_entity("PlayerModel");
-      // let c_player_model_transform = e_player_model.get_component("Transform");
-      // c_player_model_transform.position = new THREE.Vector3(-6.0, 0.0, -4.0);
-      // e_player_model.add_component(component_mesh.SkinnedMeshComponent, {
-      //     scene: this.scene_,
-      //     model_id: 'kyle2_anim_comp2',
-      //   });
-
-      // // Helmet
-      // let e_helmet = this.entity_manager_.create_entity("Helmet");
-      // let c_helmet_transform = e_helmet.get_component("Transform");
-      // c_helmet_transform.position = new THREE.Vector3(-5.0, 2.0, -3.0);
-      // c_helmet_transform.scale = new THREE.Vector3(0.5, 0.5, 0.5);
-      // const c_helmet_mesh = e_helmet.add_component(component_mesh.StaticMeshComponent, {
-      //   scene: this.scene_,
-      //   model: resources.ResourceManager.get_static_model('DamagedHelmet')
-      // });
-
-      // let e_physics_ground = this.entity_manager_.create_entity("PhysicsGround");
-      // let c_physics_ground_transform = e_physics_ground.get_component("Transform");
-      // c_physics_ground_transform.position = new THREE.Vector3(0, -0.5, 0);
-      // c_physics_ground_transform.rotation = new THREE.Quaternion(0, 0, 0, 1);
-      // e_physics_ground.add_component(component_physics.BoxCollider, {
-      //   transform: c_physics_ground_transform,
-      //   physics_state: e_singletons.get_component("PhysicsState"),
-      //   size: new THREE.Vector3(100, 1, 100),
-      //   body_type: component_physics.eBodyType.BT_Static,
-      //   // user_data: {},
-      //   scene: this.scene_,
-      // });
-
-      // let e_physics_box = this.entity_manager_.create_entity("PhysicsBox");
-      // let c_physics_box_transform = e_physics_box.get_component("Transform");
-      // c_physics_box_transform.position = new THREE.Vector3(2.0, 0.51, -2.0);
-      // c_physics_box_transform.rotation = new THREE.Quaternion(0, 0, 0, 1);
-      // e_physics_box.add_component(component_physics.BoxCollider, {
-      //   physics_state: e_singletons.get_component("PhysicsState"),
-      //   transform: c_physics_box_transform,
-      //   mass: 0,
-      //   size: new THREE.Vector3(1, 1, 1),
-      //   body_type: component_physics.eBodyType.BT_Dynamic,
-      //   // user_data: {},
-      //   collision_group: eCollisionGroup.CG_Default,
-      //   collision_mask: eCollisionGroup.CG_All,
-      //   is_contact_listener: false,
-      // });
-
-      /*
-      * CREATE GROUND
-      */
-      // const groundGeo = new THREE.PlaneGeometry( 100, 100 );
-      // const grid_texture = resources.ResourceManager.get_texture('Grid');
-      // const grid_n_texture = resources.ResourceManager.get_texture('Grid_N');
-      // grid_texture.wrapS = THREE.RepeatWrapping;
-      // grid_texture.wrapT = THREE.RepeatWrapping;
-      // grid_texture.repeat.set(64, 64);
-      // grid_n_texture.wrapS = THREE.RepeatWrapping;
-      // grid_n_texture.wrapT = THREE.RepeatWrapping;
-      // grid_n_texture.repeat.set(64, 64);
-      // const groundMat = new THREE.MeshStandardMaterial( {
-      //   // color: 0x3c6e71,
-      //   map: grid_texture,
-      //   normalMap: grid_n_texture,
-      //   normalScale: new THREE.Vector2(0.25, 0.25),
-      //   roughness: 0.1,
-      //   metalness: 0.5,
-      //  } );
-      // const ground = new THREE.Mesh( groundGeo, groundMat );
-      // ground.rotation.x = - Math.PI / 2;
-      // this.scene_.add( ground );
-
-      /*
-      * CREATE CUBE
-      */
 
       /*
        * Setup systems
        */
+      this.entity_manager_.register_system(system_game_state.GameStateSystem);
+      this.entity_manager_.register_system(system_audio.AudioSystem);
       this.entity_manager_.register_system(system_input.InputSystem);
       this.entity_manager_.register_system(system_player_behavior.PlayerBehaviorSystem);
       this.entity_manager_.register_system(system_player_movement.PlayerMovementSystem);
@@ -587,6 +639,13 @@ export const game_world = (() => {
        */
       this.entity_manager_.init();
       this.entity_manager_.post_init();
+    }
+
+    destroy()
+    {
+      this.entity_manager_.destroy();
+
+      this.scene_.clear();
     }
 
     pre_update()

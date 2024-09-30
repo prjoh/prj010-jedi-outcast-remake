@@ -90,6 +90,28 @@ export const component_mesh = (() => {
       return this.instanced_mesh_.instanceMatrix.array;
     }
 
+    destroy()
+    {
+      if (env.DEBUG_MODE)
+      {
+        for (let mesh of InstancedMeshComponent.debug_meshes)
+        {
+          mesh.material.dispose();
+          mesh.geometry.dispose();
+        }
+
+        InstancedMeshComponent.debug_meshes = [];
+        InstancedMeshComponent.editor_initialized = false;
+        InstancedMeshComponent.draw_ai_behaviors = false;
+      }
+
+      this.geometry_.dispose();
+      this.material_.dispose();
+      this.instanced_mesh_.dispose();
+
+      super.destroy();
+    }
+
     on_initialized()
     {
       super.on_initialized();
@@ -142,6 +164,22 @@ export const component_mesh = (() => {
       setup_shadows(this.mesh_, params.cast_shadow, params.receive_shadow);
     }
 
+    destroy()
+    {
+      this.mesh_.traverse((c) => {
+        if (c.material)
+        {
+          c.material.dispose();
+        }
+        if (c.geometry)
+        {
+          c.geometry.dispose();
+        }
+      });
+
+      super.destroy();
+    }
+
     set_transform(t)
     {
       if (this.mesh_ === null) return;
@@ -173,6 +211,22 @@ export const component_mesh = (() => {
 
       // // TODO
       // this.bone_ = null;
+    }
+
+    destroy()
+    {
+      this.mesh_.traverse((c) => {
+        if (c.material)
+        {
+          c.material.dispose();
+        }
+        if (c.geometry)
+        {
+          c.geometry.dispose();
+        }
+      });
+
+      super.destroy();
     }
 
     find_child(name)

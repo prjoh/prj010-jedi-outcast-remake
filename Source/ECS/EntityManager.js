@@ -6,6 +6,12 @@ import { ecs_entity } from './Entity';
 
 export const ecs_manager = (() => {
 
+  const eQuitState = Object.freeze({
+    QR_None:           0,
+    QR_GameOver:       1,
+    QR_CriticalError:  2,
+  });
+
   /** @final */
   class EntityManager
   {
@@ -16,6 +22,34 @@ export const ecs_manager = (() => {
       this.systems_ = [];
 
       this.component_type_updated = {};
+
+      this.quit_state_ = eQuitState.QR_None;
+    }
+
+    destroy()
+    {
+      for (let entity of this.entities_)
+      {
+        entity.destroy();
+      }
+
+      this.ids_ = 0;
+      this.entities_ = new object.ObjectMap();
+      this.systems_ = [];
+
+      this.component_type_updated = {};
+
+      this.quit_state_ = eQuitState.QR_None;
+    }
+
+    get quit_state()
+    {
+      return this.quit_state_;
+    }
+
+    set_quit_state(quit_state)
+    {
+      this.quit_state_ = quit_state;
     }
 
     generate_name_() {
@@ -163,6 +197,7 @@ export const ecs_manager = (() => {
 
   return {
     EntityManager: EntityManager,
+    eQuitState: eQuitState,
   };
 
 })();

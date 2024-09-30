@@ -60,14 +60,19 @@ export const component_physics = (() => {
         offset = new THREE.Vector3(0.0, 0.0, 0.0);
       }
 
+      const ammo_pos = new Ammo.btVector3(position.x, position.y, position.z);
+      const ammo_rot = new Ammo.btQuaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+
       this.transform_ = new Ammo.btTransform();
       this.transform_.setIdentity();
-      this.transform_.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-      this.transform_.setRotation(new Ammo.btQuaternion(rotation.x, rotation.y, rotation.z, rotation.w));
+      this.transform_.setOrigin(ammo_pos);
+      this.transform_.setRotation(ammo_rot);
+
+      const ammo_pos2 = new Ammo.btVector3(offset.x, offset.y, offset.z);
 
       this.center_of_mass_offset_ = new Ammo.btTransform();
       this.center_of_mass_offset_.setIdentity();
-      this.center_of_mass_offset_.setOrigin(new Ammo.btVector3(offset.x, offset.y, offset.z));
+      this.center_of_mass_offset_.setOrigin(ammo_pos2);
 
       this.motion_state_ = new Ammo.btDefaultMotionState(this.transform_, this.center_of_mass_offset_);
 
@@ -82,6 +87,10 @@ export const component_physics = (() => {
       this.user_data_ = new Ammo.btVector3(0, 0, 0);
 
       this.is_contact_listener = params.is_contact_listener;
+
+      Ammo.destroy(ammo_pos);
+      Ammo.destroy(ammo_rot);
+      Ammo.destroy(ammo_pos2);
     }
 
     on_initialized()
@@ -101,6 +110,8 @@ export const component_physics = (() => {
       Ammo.destroy(this.motion_state_);
       Ammo.destroy(this.transform_);
       Ammo.destroy(this.user_data_);
+      Ammo.destroy(this.center_of_mass_offset_);
+      Ammo.destroy(this.angular_factor_);
 
       super.destroy();
     }
@@ -357,6 +368,10 @@ export const component_physics = (() => {
         }
       };
 
+      Ammo.destroy(A0);
+      Ammo.destroy(A1);
+      Ammo.destroy(A2);
+
       if (params.traverse)
       {
         params.mesh.traverse(c => {
@@ -486,6 +501,13 @@ export const component_physics = (() => {
 
       params.physics_state.add_collider(this, params.collision_group, params.collision_mask);
     }
+
+    destroy()
+    {
+      Ammo.destroy(this.ammo_mesh_);
+
+      super.destroy();
+    }
   };
 
   class CylinderCollider extends Collider
@@ -504,6 +526,8 @@ export const component_physics = (() => {
 
       this.shape_ = new Ammo.btCylinderShape(bt_half_size);
       
+      Ammo.destroy(bt_half_size);
+
       // Set the collision margin
       this.shape_.setMargin(BT_COLLISION_MARGIN);
 
@@ -635,6 +659,87 @@ export const component_physics = (() => {
     }
   };
 
+  class ConvexMeshTrigger extends Trigger
+  {
+    static CLASS_NAME = 'ConvexMeshTrigger';
+
+    get NAME() {
+      return ConvexMeshTrigger.CLASS_NAME;
+    }
+
+    constructor(params)
+    {
+      super(params);
+
+
+      const V0 = new THREE.Vector3();
+      const V1 = new THREE.Vector3();
+      const V2 = new THREE.Vector3();
+
+      const A0 = new Ammo.btVector3();
+      const A1 = new Ammo.btVector3();
+      const A2 = new Ammo.btVector3();
+
+      let shape = new Ammo.btConvexHullShape();
+
+      // this.ammo_mesh_ = new Ammo.btTriangleMesh(true, true);
+
+      const extract_geometry = (geometry, matrix_world) => {
+        const p = geometry.attributes.position.array;
+        for (let i = 0; i < geometry.index.count; i+=3) {
+          const i0 = geometry.index.array[i] * 3;
+          const i1 = geometry.index.array[i + 1] * 3;
+          const i2 = geometry.index.array[i + 2] * 3;
+
+          V0.fromArray(p, i0).applyMatrix4(matrix_world);
+          V1.fromArray(p, i1).applyMatrix4(matrix_world);
+          V2.fromArray(p, i2).applyMatrix4(matrix_world);
+
+          A0.setX(V0.x);
+          A0.setY(V0.y);
+          A0.setZ(V0.z);
+          A1.setX(V1.x);
+          A1.setY(V1.y);
+          A1.setZ(V1.z);
+          A2.setX(V2.x);
+          A2.setY(V2.y);
+          A2.setZ(V2.z);
+
+          shape.addPoint(A0, false);
+          shape.addPoint(A1, false);
+          shape.addPoint(A2, false);
+
+          // ammo_mesh.addTriangle(A0, A1, A2, false);
+        }
+      };
+
+      Ammo.destroy(A0);
+      Ammo.destroy(A1);
+      Ammo.destroy(A2);
+
+      if (params.traverse)
+      {
+        params.mesh.traverse(c => {
+          c.updateMatrixWorld(true);
+          if (c.geometry) {
+            extract_geometry(c.geometry, c.matrixWorld);
+          }
+        });
+      }
+      else
+      {
+        const geometry = params.mesh.geometry;
+        params.mesh.updateMatrixWorld(true);
+        extract_geometry(geometry, params.mesh.matrixWorld);
+      }
+
+      shape.recalcLocalAabb();
+      this.set_shape(shape);
+
+      params.physics_state.add_trigger(this, params.collision_group, params.collision_mask);
+    }
+  };
+
   class KinematicCharacterController extends ecs_component.Component
   {
     static CLASS_NAME = 'KinematicCharacterController';
@@ -682,6 +787,32 @@ export const component_physics = (() => {
       params.physics_state.add_kinematic_character_controller(this, params.collision_group, params.collision_mask);
     }
 
+    set position(pos)
+    {
+      this.body_.getWorldTransform(this.transform_);
+      this.transform_.setOrigin(pos);
+      this.body_.setWorldTransform(this.transform_);
+    }
+
+    get position()
+    {
+      this.body_.getWorldTransform(this.transform_);
+      return this.transform_.getOrigin();
+    }
+
+    set rotation(quat)
+    {
+      this.body_.getWorldTransform(this.transform_);
+      this.transform_.setRotation(quat);
+      this.body_.setWorldTransform(this.transform_);
+    }
+
+    get rotation()
+    {
+      this.body_.getWorldTransform(this.transform_);
+      return this.transform_.getRotation();
+    }
+
     on_initialized()
     {
       super.on_initialized();
@@ -699,6 +830,13 @@ export const component_physics = (() => {
       Ammo.destroy(this.user_data_);
 
       super.destroy();
+    }
+
+    on_player_death()
+    {
+      let e_singletons = this.entity_.manager.get_entity("Singletons");
+      let c_physics = e_singletons.get_component("PhysicsState");
+      c_physics.remove_kinematic_character_controller(this);
     }
   };
 
@@ -751,13 +889,13 @@ export const component_physics = (() => {
       this.geometry_.setAttribute("color", color_attribute);
       this.geometry_.setDrawRange(0, 0);
       
-      const mesh = new THREE.LineSegments(
+      this.mesh_ = new THREE.LineSegments(
         this.geometry_, 
         new THREE.LineBasicMaterial({ vertexColors: true })
       );
       // mesh.frustumCulled = false;
 
-      scene.add(mesh);
+      scene.add(this.mesh_);
 
       this.ammo_debug_drawer_ = new Ammo.DebugDrawer();
       this.ammo_debug_drawer_.drawLine = this.drawLine.bind(this);
@@ -771,6 +909,14 @@ export const component_physics = (() => {
       this.ammo_debug_drawer_.update = this.update.bind(this);
 
       this.world_.setDebugDrawer(this.ammo_debug_drawer_);
+    }
+
+    destroy()
+    {
+      this.mesh_.geometry.dispose();
+      this.mesh_.material.dispose();
+
+      Ammo.destroy(this.ammo_debug_drawer_);
     }
 
     enable()
@@ -925,14 +1071,22 @@ export const component_physics = (() => {
 
     destroy()
     {
-      Ammo.Destroy(this.physics_world_);
-      Ammo.Destroy(this.solver_);
-      Ammo.Destroy(this.broadphase_);
-      Ammo.Destroy(this.dispatcher_);
-      Ammo.Destroy(this.collision_configuration_);
-      Ammo.Destroy(this.ray_from_);
-      Ammo.Destroy(this.ray_to_);
-      // Ammo.Destroy(this.ray_cb_);
+      Ammo.destroy(this.physics_world_);
+      Ammo.destroy(this.solver_);
+      Ammo.destroy(this.broadphase_);
+      Ammo.destroy(this.dispatcher_);
+      Ammo.destroy(this.collision_configuration_);
+      Ammo.destroy(this.ray_from_);
+      Ammo.destroy(this.ray_to_);
+      // Ammo.destroy(this.ray_cb_);
+
+      if (env.DEBUG_MODE)
+      {
+        if (this.debug_drawer_ !== null)
+        {
+          this.debug_drawer_.destroy();
+        }
+      }
 
       super.destroy();
     }
@@ -1116,6 +1270,12 @@ export const component_physics = (() => {
       // paircache.setInternalGhostPairCallback(new Ammo.btGhostPairCallback());
     }
 
+    remove_kinematic_character_controller(kcc)
+    {
+      this.physics_world_.removeCollisionObject(kcc.body_);
+      this.physics_world_.removeAction(kcc.controller_);
+    }
+
     ray_test(from_world, to_world, filter_group = eCollisionGroup.CG_All, filter_mask = eCollisionGroup.CG_All)
     {
       this.ray_from_.setValue(from_world.x, from_world.y, from_world.z);
@@ -1233,6 +1393,7 @@ export const component_physics = (() => {
     ConcaveMeshCollider: ConcaveMeshCollider,
     BoxTrigger: BoxTrigger,
     CylinderTrigger: CylinderTrigger,
+    ConvexMeshTrigger: ConvexMeshTrigger,
     Trigger: Trigger,
   };
 

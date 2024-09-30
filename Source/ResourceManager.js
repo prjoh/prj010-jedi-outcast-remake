@@ -19,6 +19,13 @@ export const resources = (() => {
       this.mesh_instances_ = new Map();
     }
 
+    reset()
+    {
+      this.mesh_instances_.forEach((v, k, m) => {
+        v.index = 0;
+      });
+    }
+
     async create(mesh_requests)
     {
       const init_skinned_mesh = (mesh_id) => {
@@ -98,6 +105,7 @@ export const resources = (() => {
     static loaded_skinned_models_ = {};
     static loaded_static_models_ = {};
     static loaded_cube_maps_ = {};
+    static loaded_audio_ = {};
     // static loaded_animations_ = {};
 
     static skinned_mesh_cache_ = new SkinnedMeshCache(this);
@@ -254,6 +262,21 @@ export const resources = (() => {
       });
     }
 
+    static load_audio(resource_key, file_type)
+    {
+      if (resource_key in this.loaded_audio_)
+      {
+        return;
+      }
+
+      const path = `${BASE_PATH}Audio/${resource_key}.${file_type}`;
+      const loader = new THREE.AudioLoader(this.loading_manager_);
+      
+      loader.load(path, (audio_buffer) => {
+        this.loaded_audio_[resource_key] = audio_buffer;
+      });
+    }
+
     static get_binary_data(resource_key, copy_data = true)
     {
       if (!(resource_key in this.loaded_binaries_))
@@ -343,9 +366,24 @@ export const resources = (() => {
       // });
     }
 
+    static get_audio(resource_key)
+    {
+      if (!(resource_key in this.loaded_audio_))
+      {
+        throw new Error(`Audio resource not found: ${resource_key}`);
+      }
+
+      return this.loaded_audio_[resource_key];
+    }
+
     static async create_skinned_model_cache(mesh_requests)
     {
       await this.skinned_mesh_cache_.create(mesh_requests);
+    }
+
+    static reset_skinned_model_cache()
+    {
+      this.skinned_mesh_cache_.reset();
     }
 
     static get_cached_skinned_model(model_id)

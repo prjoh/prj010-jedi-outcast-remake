@@ -107,6 +107,13 @@ export const component_editor = (() => {
       }
     }
 
+    destroy()
+    {
+      this.pane_.dispose();
+
+      super.destroy();
+    }
+
     get_page(editor_page)
     {
       assert(Object.values(eEditorPage).includes(editor_page));

@@ -33,7 +33,8 @@ export const component_controls = (() => {
 
     destroy()
     {
-      Ammo.destroy(this.move);
+      Ammo.destroy(this.direction_run_buffer);
+      Ammo.destroy(this.velocity_run_buffer);
     }
   };
 

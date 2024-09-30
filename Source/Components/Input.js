@@ -308,6 +308,8 @@ export const component_input = (() => {
     {
       super();
 
+      this.canvas_ = document.getElementById('canvas');
+
       this.keyboard = {
         // exit_key: 0,
         previous_key_state: new Array(MAX_KEYBOARD_KEYS).fill(false),    // Registers current frame key state
@@ -324,7 +326,8 @@ export const component_input = (() => {
         previous_position: new THREE.Vector2(0.0, 0.0),  // Previous mouse position
         movement: new THREE.Vector2(0.0, 0.0),
     
-        is_locked: false,
+        is_locked: document.pointerLockElement === this.canvas_,
+
         // cursor_type: eMouseCursor.MC_CursorDefault,  // Tracks current mouse cursor
         // is_cursor_hidden: false,     // Track if cursor is hidden
         // is_cursor_on_screen: false,  // Tracks if cursor is inside client area
@@ -360,7 +363,6 @@ export const component_input = (() => {
       document.onmousedown = this.on_mouse_down_.bind(this);
       document.onmouseup = this.on_mouse_up_.bind(this);
 
-      this.canvas_ = document.getElementById('canvas');
       this.canvas_.onclick = this.on_click_.bind(this);
 
       document.onpointerlockchange = this.on_pointerlock_change_.bind(this);
@@ -495,9 +497,13 @@ export const component_input = (() => {
 
     on_key_down_(e)
     {
-      assert(e.key in KeyboardEventKeys, `'${e.key}' was not found in KeyboardEventKeys.`);
+      // TODO: There is better solution to this
+      const is_letter = (c) => { return c.length === 1 && c.toLowerCase() != c.toUpperCase(); }
+      const event_key = is_letter(e.key) ? e.key.toLowerCase() : e.key;
 
-      const key_index = KeyboardEventKeys[e.key];
+      assert(event_key in KeyboardEventKeys, `'${event_key}' was not found in KeyboardEventKeys.`);
+
+      const key_index = KeyboardEventKeys[event_key];
       this.keyboard.current_key_state[key_index] = true;
       this.keyboard.key_repeat_in_frame[key_index] = e.repeat;
 
@@ -514,9 +520,13 @@ export const component_input = (() => {
 
     on_key_up_(e)
     {
-      assert(e.key in KeyboardEventKeys, `'${e.key}' was not found in KeyboardEventKeys.`);
+      // TODO: There is better solution to this
+      const is_letter = (c) => { return c.length === 1 && c.toLowerCase() != c.toUpperCase(); }
+      const event_key = is_letter(e.key) ? e.key.toLowerCase() : e.key;
+      
+      assert(event_key in KeyboardEventKeys, `'${event_key}' was not found in KeyboardEventKeys.`);
 
-      const key_index = KeyboardEventKeys[e.key];
+      const key_index = KeyboardEventKeys[event_key];
       this.keyboard.current_key_state[key_index] = false;
     }
 

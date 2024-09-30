@@ -60,6 +60,14 @@ export const component_player_blocker = (() => {
         collision_mask: eCollisionGroup.CG_All & ~eCollisionGroup.CG_PlayerDeflector,
       });
     }
+
+    on_player_death()
+    {
+      let e_singletons = this.entity_.manager.get_entity("Singletons");
+      let c_physics = e_singletons.get_component("PhysicsState");
+      c_physics.remove_trigger(this.outer_trigger_);
+      c_physics.remove_trigger(this.inner_trigger_);
+    }
   };
 
   return {

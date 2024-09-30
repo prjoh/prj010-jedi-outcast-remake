@@ -27,6 +27,7 @@ export const component_interact = (() => {
     {
       Ammo.destroy(this.impulse_);
       Ammo.destroy(this.rel_pos_);
+      Ammo.destroy(this.impulse_offset_);
 
       super.destroy();
     }

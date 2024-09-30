@@ -11,11 +11,17 @@ const eGoalResult = Object.freeze({
 });
 
 const eGoal = Object.freeze({
-  G_Guarding:  0,
-  G_Patroling:  1,
-  G_MoveToPosition:  2,
-  G_TurnTowards:  3,
-  G_Wait:  4,
+  G_Guarding:                  0,
+  G_Patroling:                 1,
+  G_MoveToPosition:            2,
+  G_TurnTowards:               3,
+  G_Wait:                      4,
+  G_Investigate:               5,
+  G_CombatIdle:                6,
+  G_CombatMoveAttackPosition:  7,
+  G_CombatAttackStanding:      8,
+  G_CombatAttackWalking:       9,
+  G_CombatWon:                 10,
 });
 
 class Goal
@@ -98,6 +104,15 @@ class Goal
 
   clear_subgoal()
   {
+    if (this.has_subgoal())
+    {
+      let goal = this.get_subgoal();
+      if (goal.is_active)
+      {
+        goal.terminate_goal();
+      }
+    }
+
     this.subgoals_.length = 0;
   }
 
