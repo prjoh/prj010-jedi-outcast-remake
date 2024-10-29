@@ -128,6 +128,10 @@ export const component_renderer = (() => {
       this.bloom_pass = new PPROC.EffectPass(this.camera, this.bloom_effect);
       this.tone_mapping_pass = new PPROC.EffectPass(this.camera, this.tone_mapping_effect);
 
+      // Optimization
+      this.ao_pass.enabled = false;
+      this.smaa_pass.enabled = false;
+
       this.composer.addPass(this.opaque_pass);
       this.composer.addPass(this.smaa_pass);
       this.composer.addPass(this.ao_pass);
